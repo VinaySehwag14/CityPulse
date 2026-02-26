@@ -1,0 +1,4 @@
+// feed module – Phase 2 placeholder
+// Do NOT implement feed logic in Phase 1.
+// See ROADMAP.md: Phase 2 – Discovery.
+export {};

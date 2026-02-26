@@ -1,0 +1,25 @@
+# ── Internal docs (keep local only) ──────────────────────────────
+docs/
+
+# ── Dependencies ──────────────────────────────────────────────────
+node_modules/
+**/node_modules/
+
+# ── Build output ──────────────────────────────────────────────────
+dist/
+build/
+**/dist/
+
+# ── Environment / secrets ─────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── OS / Editor ───────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# ── TypeScript ────────────────────────────────────────────────────
+*.tsbuildinfo
