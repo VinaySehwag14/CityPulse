@@ -26,16 +26,26 @@ export async function requireAuth(
 
         const token = authHeader.split(' ')[1];
 
-        const requestState = await clerkClient.authenticateRequest(req as unknown as Request, {
-            headerToken: token,
-        });
+        // authenticateRequest accepts our Express Request directly via the headerToken option
+        const requestState = await clerkClient.authenticateRequest(
+            new globalThis.Request('http://localhost', {
+                headers: { authorization: `Bearer ${token}` },
+            })
+        );
 
         if (!requestState.isSignedIn) {
             res.status(401).json({ success: false, error: 'Unauthorized: Invalid token' });
             return;
         }
 
-        const { userId, sessionId } = requestState.toAuth();
+        const auth = requestState.toAuth();
+        const userId: string | null = auth.userId;
+        const sessionId: string | null = auth.sessionId;
+
+        if (!userId || !sessionId) {
+            res.status(401).json({ success: false, error: 'Unauthorized: Missing auth claims' });
+            return;
+        }
 
         req.auth = { userId, sessionId };
 

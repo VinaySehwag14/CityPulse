@@ -1,7 +1,24 @@
-// auth module – service stub
-// Contains business logic for user sync via Clerk webhook data.
+// auth.service.ts
+// Business logic: upsert authenticated Clerk user into the local users table.
+// No HTTP objects here. Controller calls this.
 
-export async function syncUser(/* clerkId: string, email: string, name: string */): Promise<void> {
-    // TODO: Phase 1 – upsert user record in DB using DATABASE.md schema
-    throw new Error('Not implemented');
+import pool from '../../config/db';
+import type { User, UpsertUserPayload } from '../users/users.types';
+
+export async function upsertUser(payload: UpsertUserPayload): Promise<User> {
+    const { clerkId, email, name, avatar } = payload;
+
+    const result = await pool.query<User>(
+        `INSERT INTO users (id, clerk_id, email, name, avatar)
+     VALUES (gen_random_uuid(), $1, $2, $3, $4)
+     ON CONFLICT (clerk_id)
+     DO UPDATE SET
+       email  = EXCLUDED.email,
+       name   = EXCLUDED.name,
+       avatar = EXCLUDED.avatar
+     RETURNING id, clerk_id, email, name, avatar, bio, created_at`,
+        [clerkId, email, name, avatar]
+    );
+
+    return result.rows[0];
 }
