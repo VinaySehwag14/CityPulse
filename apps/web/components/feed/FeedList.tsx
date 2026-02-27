@@ -4,10 +4,9 @@ import { useRef, useCallback, useState, useMemo } from 'react';
 import { useFeed } from '@/hooks/useFeed';
 import EventCard from '@/components/events/EventCard';
 import Spinner from '@/components/ui/Spinner';
+import EmptyState from '@/components/ui/EmptyState';
 import type { FeedEvent } from '@/lib/types';
 
-// Feed sections from FEATURES.md:
-// "Live Now", "Trending", "Upcoming" — derived client-side from is_live + score
 type Tab = 'all' | 'live' | 'trending' | 'upcoming';
 
 const TABS: { id: Tab; label: string; emoji: string }[] = [
@@ -42,6 +41,7 @@ export default function FeedList() {
 
     const allEvents = useMemo(() => data?.pages.flatMap((p) => p.events) ?? [], [data]);
     const displayEvents = useMemo(() => filterEvents(allEvents, activeTab), [allEvents, activeTab]);
+    const liveCount = allEvents.filter((e) => e.is_live).length;
 
     if (isLoading) {
         return (
@@ -60,8 +60,6 @@ export default function FeedList() {
             </div>
         );
     }
-
-    const liveCount = allEvents.filter((e) => e.is_live).length;
 
     return (
         <div className="space-y-4">
@@ -87,28 +85,17 @@ export default function FeedList() {
                 ))}
             </div>
 
-            {/* Events */}
+            {/* Empty state — uses Imagen illustration */}
             {displayEvents.length === 0 ? (
-                <div className="text-center py-16 text-[#8b949e]">
-                    {activeTab === 'live' ? (
-                        <>
-                            <p className="text-2xl mb-2">🕐</p>
-                            <p className="text-lg font-medium text-[#e6edf3]">Nothing live right now</p>
-                            <p className="text-sm mt-1">Check back soon or browse upcoming events</p>
-                        </>
-                    ) : (
-                        <>
-                            <p className="text-2xl mb-2">🌆</p>
-                            <p className="text-lg font-medium text-[#e6edf3]">Nothing here yet</p>
-                            <p className="text-sm mt-1">Be the first to create an event!</p>
-                        </>
-                    )}
-                </div>
+                <EmptyState
+                    tab={activeTab}
+                    onClearFilter={activeTab !== 'all' ? () => setActiveTab('all') : undefined}
+                />
             ) : (
                 displayEvents.map((event) => <EventCard key={event.id} event={event} />)
             )}
 
-            {/* Infinite scroll sentinel — only show on "all" tab */}
+            {/* Infinite scroll sentinel — only on "all" tab */}
             {activeTab === 'all' && (
                 <div ref={sentinelRef} className="flex justify-center py-4">
                     {isFetchingNextPage && <Spinner size="sm" />}
