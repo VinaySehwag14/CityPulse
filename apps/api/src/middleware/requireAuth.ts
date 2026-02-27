@@ -1,13 +1,11 @@
 // requireAuth.ts
-// Verifies Clerk Bearer JWT tokens for Express API routes.
-// Uses verifyToken() — the correct approach for REST API backends.
-// authenticateRequest() is for Next.js middleware (session cookies), not APIs.
+// Verifies Clerk Bearer JWT tokens for Express REST API routes.
+// Uses the standalone verifyToken() import from @clerk/backend — correct
+// for Express APIs. authenticateRequest() is Next.js-only (session cookies).
 
-import { createClerkClient } from '@clerk/backend';
+import { verifyToken } from '@clerk/backend';
 import type { Request, Response, NextFunction } from 'express';
 import { env } from '../config/env';
-
-const clerk = createClerkClient({ secretKey: env.CLERK_SECRET_KEY });
 
 export interface AuthenticatedRequest extends Request {
     auth?: {
@@ -31,13 +29,15 @@ export async function requireAuth(
     const token = authHeader.slice(7); // strip 'Bearer '
 
     try {
-        // verifyToken() is the correct method for Express REST API JWT verification.
-        // It verifies the Clerk-issued JWT directly using the secret key.
-        const payload = await clerk.verifyToken(token);
+        // Standalone verifyToken() — correct for Express REST API Bearer JWT flow.
+        // secretKey is required; it fetches Clerk's JWKS and verifies the signature.
+        const payload = await verifyToken(token, {
+            secretKey: env.CLERK_SECRET_KEY,
+        });
 
         req.auth = {
-            userId: payload.sub,           // Clerk userId is in the 'sub' claim
-            sessionId: payload.sid ?? '',     // session id
+            userId: payload.sub,       // Clerk userId is in JWT 'sub' claim
+            sessionId: payload.sid ?? '', // session id
         };
 
         next();
