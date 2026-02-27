@@ -1,8 +1,13 @@
+// requireAuth.ts
+// Verifies Clerk Bearer JWT tokens for Express API routes.
+// Uses verifyToken() — the correct approach for REST API backends.
+// authenticateRequest() is for Next.js middleware (session cookies), not APIs.
+
 import { createClerkClient } from '@clerk/backend';
 import type { Request, Response, NextFunction } from 'express';
 import { env } from '../config/env';
 
-const clerkClient = createClerkClient({ secretKey: env.CLERK_SECRET_KEY });
+const clerk = createClerkClient({ secretKey: env.CLERK_SECRET_KEY });
 
 export interface AuthenticatedRequest extends Request {
     auth?: {
@@ -16,41 +21,28 @@ export async function requireAuth(
     res: Response,
     next: NextFunction
 ): Promise<void> {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).json({ success: false, error: 'Unauthorized: Missing token' });
+        return;
+    }
+
+    const token = authHeader.slice(7); // strip 'Bearer '
+
     try {
-        const authHeader = req.headers.authorization;
+        // verifyToken() is the correct method for Express REST API JWT verification.
+        // It verifies the Clerk-issued JWT directly using the secret key.
+        const payload = await clerk.verifyToken(token);
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            res.status(401).json({ success: false, error: 'Unauthorized: Missing token' });
-            return;
-        }
-
-        const token = authHeader.split(' ')[1];
-
-        // authenticateRequest accepts our Express Request directly via the headerToken option
-        const requestState = await clerkClient.authenticateRequest(
-            new globalThis.Request('http://localhost', {
-                headers: { authorization: `Bearer ${token}` },
-            })
-        );
-
-        if (!requestState.isSignedIn) {
-            res.status(401).json({ success: false, error: 'Unauthorized: Invalid token' });
-            return;
-        }
-
-        const auth = requestState.toAuth();
-        const userId: string | null = auth.userId;
-        const sessionId: string | null = auth.sessionId;
-
-        if (!userId || !sessionId) {
-            res.status(401).json({ success: false, error: 'Unauthorized: Missing auth claims' });
-            return;
-        }
-
-        req.auth = { userId, sessionId };
+        req.auth = {
+            userId: payload.sub,           // Clerk userId is in the 'sub' claim
+            sessionId: payload.sid ?? '',     // session id
+        };
 
         next();
-    } catch {
-        res.status(401).json({ success: false, error: 'Unauthorized: Token verification failed' });
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'Token verification failed';
+        res.status(401).json({ success: false, error: `Unauthorized: ${message}` });
     }
 }
