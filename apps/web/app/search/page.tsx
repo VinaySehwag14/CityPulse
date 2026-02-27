@@ -1,12 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useSearch } from '@/hooks/useSearch';
 import EventCard from '@/components/events/EventCard';
 import Spinner from '@/components/ui/Spinner';
-import type { FeedEvent } from '@/lib/types';
-import type { SearchResult } from '@/lib/types';
-import { Search, MapPin } from 'lucide-react';
+import type { FeedEvent, SearchResult } from '@/lib/types';
+import { Search, MapPin, List, Map } from 'lucide-react';
+
+// Leaflet uses window — must be dynamically loaded client-side only
+const MapView = dynamic(() => import('@/components/search/MapView'), {
+    ssr: false,
+    loading: () => <div className="rounded-2xl bg-[#161b22] border border-[#30363d] h-[420px] flex items-center justify-center"><Spinner /></div>,
+});
+
+type ViewMode = 'list' | 'map';
 
 export default function SearchPage() {
     const [q, setQ] = useState('');
@@ -14,6 +22,7 @@ export default function SearchPage() {
     const [lat, setLat] = useState('');
     const [lng, setLng] = useState('');
     const [radius, setRadius] = useState('5');
+    const [viewMode, setViewMode] = useState<ViewMode>('list');
 
     const params = {
         q: q.trim() || undefined,
@@ -43,7 +52,6 @@ export default function SearchPage() {
 
             {/* Search controls */}
             <div className="glass rounded-2xl p-4 space-y-3 mb-6">
-                {/* Text search */}
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8b949e]" />
                     <input
@@ -54,8 +62,7 @@ export default function SearchPage() {
                     />
                 </div>
 
-                {/* Geo toggle */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                     <button
                         type="button"
                         onClick={useLocation}
@@ -64,9 +71,7 @@ export default function SearchPage() {
                         <MapPin className="w-4 h-4" />
                         Use my location
                     </button>
-                    {geoMode && (
-                        <span className="text-xs text-[#22c55e]">📍 Location set</span>
-                    )}
+                    {geoMode && <span className="text-xs text-[#22c55e]">📍 Location set</span>}
                 </div>
 
                 {geoMode && (
@@ -80,10 +85,11 @@ export default function SearchPage() {
                 )}
             </div>
 
-            {/* Results */}
+            {/* Loading / Error */}
             {isLoading && <div className="flex justify-center py-10"><Spinner /></div>}
             {isError && <p className="text-center text-[#8b949e] py-10">Search failed. Please try again.</p>}
 
+            {/* Results */}
             {results && results.length === 0 && (
                 <div className="text-center py-12 text-[#8b949e]">
                     <p className="text-lg font-medium text-[#e6edf3]">No events found</p>
@@ -93,17 +99,50 @@ export default function SearchPage() {
 
             {results && results.length > 0 && (
                 <div className="space-y-4">
-                    <p className="text-sm text-[#8b949e]">{results.length} event{results.length !== 1 ? 's' : ''} found</p>
-                    {results.map((event: SearchResult) => (
-                        <div key={event.id} className="relative">
-                            <EventCard event={event as unknown as FeedEvent} />
-                            {event.distance_km !== null && (
-                                <span className="absolute top-3 right-3 text-xs text-[#8b949e] bg-[#1c2128] border border-[#30363d] rounded-full px-2 py-0.5">
-                                    {event.distance_km} km away
-                                </span>
-                            )}
+                    {/* Result count + List/Map toggle */}
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-[#8b949e]">
+                            {results.length} event{results.length !== 1 ? 's' : ''} found
+                        </p>
+                        <div className="flex gap-1 bg-[#161b22] border border-[#30363d] rounded-xl p-1">
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-[#0caee8] text-white' : 'text-[#8b949e] hover:text-[#e6edf3]'}`}
+                            >
+                                <List className="w-3.5 h-3.5" /> List
+                            </button>
+                            <button
+                                onClick={() => setViewMode('map')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${viewMode === 'map' ? 'bg-[#0caee8] text-white' : 'text-[#8b949e] hover:text-[#e6edf3]'}`}
+                            >
+                                <Map className="w-3.5 h-3.5" /> Map
+                            </button>
                         </div>
-                    ))}
+                    </div>
+
+                    {/* Map View */}
+                    {viewMode === 'map' && (
+                        <MapView
+                            results={results}
+                            center={lat && lng ? [parseFloat(lat), parseFloat(lng)] : undefined}
+                        />
+                    )}
+
+                    {/* List View */}
+                    {viewMode === 'list' && (
+                        <div className="space-y-3">
+                            {results.map((event: SearchResult) => (
+                                <div key={event.id} className="relative">
+                                    <EventCard event={event as unknown as FeedEvent} />
+                                    {event.distance_km !== null && (
+                                        <span className="absolute top-3 right-3 text-xs text-[#8b949e] bg-[#1c2128] border border-[#30363d] rounded-full px-2 py-0.5">
+                                            {event.distance_km} km away
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

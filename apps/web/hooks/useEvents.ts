@@ -52,3 +52,27 @@ export function useDeleteEvent() {
         },
     });
 }
+
+// ── Update event ──────────────────────────────────────────────────
+export function useUpdateEvent(id: string) {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (dto: {
+            title?: string;
+            description?: string;
+            lat?: number;
+            lng?: number;
+            start_time?: string;
+            end_time?: string;
+        }) => {
+            const token = await getToken();
+            return apiPut<Event>(`/events/${id}`, dto, token!);
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['event', id] });
+            qc.invalidateQueries({ queryKey: ['feed'] });
+        },
+    });
+}
