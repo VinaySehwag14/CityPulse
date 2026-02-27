@@ -96,10 +96,11 @@ export async function getEventDetail(id: string): Promise<EventDetail | null> {
     return {
         ...eventResult.rows[0],
         like_count: likeCount.rows[0].count,
-        attendee_count: attendees.rowCount ?? 0,
+        attendee_count: attendees.rows.length, // rowCount is unreliable for SELECT
         attendees: attendees.rows,
         comments: comments.rows,
     };
+
 }
 
 

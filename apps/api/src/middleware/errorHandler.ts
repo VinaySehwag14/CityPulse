@@ -12,9 +12,20 @@ export function errorHandler(
     _next: NextFunction
 ): void {
     const statusCode = err.statusCode ?? 500;
-    const message = err.message ?? 'Internal Server Error';
 
-    console.error(`[ErrorHandler] ${statusCode} – ${message}`);
+    // In production, never leak internal error messages for 5xx responses.
+    // Known AppErrors with explicit statusCode are safe to expose (4xx messages
+    // are authored by us, not from DB or third-party libraries).
+    const isKnownError = err.statusCode !== undefined && err.statusCode < 500;
+    const message = isKnownError
+        ? err.message
+        : process.env.NODE_ENV === 'production'
+            ? 'Internal Server Error'
+            : err.message;
+
+    // Log the full error including stack in all environments (server-side only)
+    console.error(`[ErrorHandler] ${statusCode} – ${err.message}`);
+    if (statusCode >= 500) console.error(err.stack);
 
     res.status(statusCode).json({
         success: false,

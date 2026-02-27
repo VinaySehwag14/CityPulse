@@ -11,37 +11,27 @@ export async function toggleLike(
     userId: string,
     eventId: string
 ): Promise<ToggleLikeResult> {
-    // Check if like already exists
-    const existing = await pool.query(
-        `SELECT id FROM event_likes WHERE user_id = $1 AND event_id = $2`,
+    // Atomic toggle using a single CTE — eliminates race condition from
+    // the previous check-then-insert pattern (3 round trips → 1).
+    const result = await pool.query<{ liked: boolean; like_count: number }>(
+        `WITH del AS (
+       DELETE FROM event_likes
+       WHERE user_id = $1 AND event_id = $2
+       RETURNING id
+     ),
+     ins AS (
+       INSERT INTO event_likes (id, user_id, event_id)
+       SELECT gen_random_uuid(), $1, $2
+       WHERE NOT EXISTS (SELECT 1 FROM del)
+       RETURNING id
+     )
+     SELECT
+       EXISTS (SELECT 1 FROM ins)                             AS liked,
+       (SELECT COUNT(*)::int FROM event_likes WHERE event_id = $2) AS like_count`,
         [userId, eventId]
     );
 
-    let liked: boolean;
-
-    if (existing.rows.length > 0) {
-        // Unlike
-        await pool.query(
-            `DELETE FROM event_likes WHERE user_id = $1 AND event_id = $2`,
-            [userId, eventId]
-        );
-        liked = false;
-    } else {
-        // Like
-        await pool.query(
-            `INSERT INTO event_likes (id, user_id, event_id)
-       VALUES (gen_random_uuid(), $1, $2)`,
-            [userId, eventId]
-        );
-        liked = true;
-    }
-
-    const countResult = await pool.query<{ count: number }>(
-        `SELECT COUNT(*)::int AS count FROM event_likes WHERE event_id = $1`,
-        [eventId]
-    );
-
-    return { liked, like_count: countResult.rows[0].count };
+    return result.rows[0];
 }
 
 // ─── Attendance ───────────────────────────────────────────────────────────────
@@ -51,7 +41,6 @@ export async function markAttendance(
     eventId: string,
     status: AttendStatus
 ): Promise<AttendResult> {
-    // UPSERT — if already attending, update status
     await pool.query(
         `INSERT INTO event_attendees (id, user_id, event_id, status)
      VALUES (gen_random_uuid(), $1, $2, $3)

@@ -42,7 +42,9 @@ function broadcast(eventId: string, data: object, exclude?: WebSocket): void {
 }
 
 export function createChatWsServer(): WebSocketServer {
-    const wss = new WebSocketServer({ noServer: true });
+    // maxPayload: 16 KB — prevents memory exhaustion from oversized WS frames
+    const wss = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 });
+
 
     wss.on('connection', (ws: AuthenticatedSocket, _req: IncomingMessage) => {
         ws.on('message', async (raw) => {
