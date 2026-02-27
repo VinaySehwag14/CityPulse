@@ -3,6 +3,7 @@
 // All DB access here. Extends existing users module.
 
 import pool from '../../config/db';
+import { resolveDbUserId } from '../../lib/resolveUser';
 import type { User } from './users.types';
 
 // ─── Get user by ID ────────────────────────────────────────────────────────
@@ -22,11 +23,15 @@ export interface ToggleFollowResult {
     following: boolean; // true = now following, false = unfollowed
 }
 
+// followerClerkId: the Clerk user ID of the person doing the following
+// followingId: the DB UUID of the user being followed (from the profile URL)
 export async function toggleFollow(
-    followerId: string,
+    followerClerkId: string,
     followingId: string
 ): Promise<ToggleFollowResult> {
-    if (followerId === followingId) {
+    const followerDbId = await resolveDbUserId(followerClerkId);
+
+    if (followerDbId === followingId) {
         const err = new Error('You cannot follow yourself') as Error & { statusCode: number };
         err.statusCode = 400;
         throw err;
@@ -34,22 +39,19 @@ export async function toggleFollow(
 
     const existing = await pool.query(
         `SELECT 1 FROM user_follows WHERE follower_id = $1 AND following_id = $2`,
-        [followerId, followingId]
+        [followerDbId, followingId]
     );
 
     if (existing.rows.length > 0) {
-        // Unfollow
         await pool.query(
             `DELETE FROM user_follows WHERE follower_id = $1 AND following_id = $2`,
-            [followerId, followingId]
+            [followerDbId, followingId]
         );
         return { following: false };
     } else {
-        // Follow
         await pool.query(
-            `INSERT INTO user_follows (follower_id, following_id)
-       VALUES ($1, $2)`,
-            [followerId, followingId]
+            `INSERT INTO user_follows (follower_id, following_id) VALUES ($1, $2)`,
+            [followerDbId, followingId]
         );
         return { following: true };
     }

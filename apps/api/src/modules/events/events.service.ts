@@ -4,7 +4,9 @@
 // Per AI_RULES.md: controllers call services, services query DB.
 
 import pool from '../../config/db';
+import { resolveDbUserId } from '../../lib/resolveUser';
 import type { Event, CreateEventDto, UpdateEventDto } from './events.types';
+
 
 // Shared SELECT projection – avoids SELECT *.
 // location decomposed into lat/lng via PostGIS per AI_RULES §8.
@@ -23,9 +25,10 @@ const EVENT_SELECT = `
 // ─── Create ─────────────────────────────────────────────────────────────────
 
 export async function createEvent(
-    userId: string,
+    clerkId: string,
     dto: CreateEventDto
 ): Promise<Event> {
+    const dbUserId = await resolveDbUserId(clerkId);
     const result = await pool.query<Event>(
         `INSERT INTO events (id, title, description, location, start_time, end_time, created_by)
      VALUES (
@@ -45,7 +48,7 @@ export async function createEvent(
             dto.lat,
             dto.start_time,
             dto.end_time,
-            userId,
+            dbUserId,
         ]
     );
 
@@ -108,9 +111,10 @@ export async function getEventDetail(id: string): Promise<EventDetail | null> {
 
 export async function updateEvent(
     id: string,
-    userId: string,
+    clerkId: string,
     dto: UpdateEventDto
 ): Promise<Event> {
+    const dbUserId = await resolveDbUserId(clerkId);
     // Fetch first — ownership check in service, not controller (AI_RULES §1)
     const existing = await getEventById(id);
 
@@ -120,7 +124,7 @@ export async function updateEvent(
         throw err;
     }
 
-    if (existing.created_by !== userId) {
+    if (existing.created_by !== dbUserId) {
         const err = new Error('Forbidden: you are not the owner of this event') as Error & {
             statusCode: number;
         };
@@ -174,7 +178,8 @@ export async function updateEvent(
 
 // ─── Delete ──────────────────────────────────────────────────────────────────
 
-export async function deleteEvent(id: string, userId: string): Promise<void> {
+export async function deleteEvent(id: string, clerkId: string): Promise<void> {
+    const dbUserId = await resolveDbUserId(clerkId);
     const existing = await getEventById(id);
 
     if (!existing) {
@@ -183,7 +188,7 @@ export async function deleteEvent(id: string, userId: string): Promise<void> {
         throw err;
     }
 
-    if (existing.created_by !== userId) {
+    if (existing.created_by !== dbUserId) {
         const err = new Error('Forbidden: you are not the owner of this event') as Error & {
             statusCode: number;
         };

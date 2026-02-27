@@ -2,13 +2,16 @@
 // Business logic for event comments. All DB access here.
 
 import pool from '../../config/db';
+import { resolveDbUserId } from '../../lib/resolveUser';
 import type { Comment } from './comments.types';
 
 export async function addComment(
-    userId: string,
+    clerkId: string,
     eventId: string,
     content: string
 ): Promise<Comment> {
+    const userId = await resolveDbUserId(clerkId);
+
     const result = await pool.query<Comment>(
         `INSERT INTO event_comments (id, user_id, event_id, content)
      VALUES (gen_random_uuid(), $1, $2, $3)

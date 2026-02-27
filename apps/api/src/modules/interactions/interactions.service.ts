@@ -3,14 +3,17 @@
 // All DB access here. No HTTP objects.
 
 import pool from '../../config/db';
+import { resolveDbUserId } from '../../lib/resolveUser';
 import type { AttendStatus, ToggleLikeResult, AttendResult } from './interactions.types';
 
 // ─── Likes ────────────────────────────────────────────────────────────────────
 
 export async function toggleLike(
-    userId: string,
+    clerkId: string,
     eventId: string
 ): Promise<ToggleLikeResult> {
+    const userId = await resolveDbUserId(clerkId);
+
     // Atomic toggle using a single CTE — eliminates race condition from
     // the previous check-then-insert pattern (3 round trips → 1).
     const result = await pool.query<{ liked: boolean; like_count: number }>(
@@ -37,10 +40,12 @@ export async function toggleLike(
 // ─── Attendance ───────────────────────────────────────────────────────────────
 
 export async function markAttendance(
-    userId: string,
+    clerkId: string,
     eventId: string,
     status: AttendStatus
 ): Promise<AttendResult> {
+    const userId = await resolveDbUserId(clerkId);
+
     await pool.query(
         `INSERT INTO event_attendees (id, user_id, event_id, status)
      VALUES (gen_random_uuid(), $1, $2, $3)
