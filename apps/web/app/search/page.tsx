@@ -8,8 +8,8 @@ import Spinner from '@/components/ui/Spinner';
 import type { FeedEvent, SearchResult } from '@/lib/types';
 import { Search, MapPin, List, Map } from 'lucide-react';
 
-// Leaflet uses window — must be dynamically loaded client-side only
-const MapView = dynamic(() => import('@/components/search/MapView'), {
+// Mapbox uses window — dynamically loaded client-side only
+const MapView = dynamic(() => import('@/components/map/SearchMapView'), {
     ssr: false,
     loading: () => <div className="rounded-2xl bg-[#161b22] border border-[#30363d] h-[420px] flex items-center justify-center"><Spinner /></div>,
 });

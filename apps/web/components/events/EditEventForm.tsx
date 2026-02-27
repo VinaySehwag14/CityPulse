@@ -2,40 +2,39 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useEvent, useUpdateEvent } from '@/hooks/useEvents';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 
-interface Props { params: Promise<{ id: string }> }
+const LocationPicker = dynamic(() => import('@/components/map/LocationPicker'), {
+    ssr: false,
+    loading: () => (
+        <div className="rounded-2xl bg-[#1c2128] border border-[#30363d] h-[360px] flex items-center justify-center">
+            <Spinner />
+        </div>
+    ),
+});
 
-// This is a client component that wraps the actual form
-// Separated from the page shell so we can await params server-side
 export function EditEventForm({ eventId }: { eventId: string }) {
     const router = useRouter();
     const { data: event, isLoading } = useEvent(eventId);
     const updateEvent = useUpdateEvent(eventId);
 
-    const [form, setForm] = useState({
-        title: '',
-        description: '',
-        lat: '',
-        lng: '',
-        start_time: '',
-        end_time: '',
-    });
+    const [form, setForm] = useState({ title: '', description: '', start_time: '', end_time: '' });
+    const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [initialized, setInitialized] = useState(false);
     const [error, setError] = useState('');
 
-    // Pre-fill form once event loads
+    // Pre-fill once event loads
     if (event && !initialized) {
         setForm({
             title: event.title,
             description: event.description ?? '',
-            lat: String(event.location_lat),
-            lng: String(event.location_lng),
             start_time: new Date(event.start_time).toISOString().slice(0, 16),
             end_time: new Date(event.end_time).toISOString().slice(0, 16),
         });
+        setLocation({ lat: event.location_lat, lng: event.location_lng });
         setInitialized(true);
     }
 
@@ -45,10 +44,8 @@ export function EditEventForm({ eventId }: { eventId: string }) {
         e.preventDefault();
         setError('');
 
-        const lat = parseFloat(form.lat);
-        const lng = parseFloat(form.lng);
         if (!form.title.trim()) return setError('Title is required');
-        if (isNaN(lat) || isNaN(lng)) return setError('Valid latitude and longitude are required');
+        if (!location) return setError('Please select a location on the map');
         if (!form.start_time || !form.end_time) return setError('Start and end times are required');
         if (new Date(form.end_time) <= new Date(form.start_time)) return setError('End time must be after start time');
 
@@ -56,7 +53,8 @@ export function EditEventForm({ eventId }: { eventId: string }) {
             await updateEvent.mutateAsync({
                 title: form.title.trim(),
                 description: form.description.trim() || undefined,
-                lat, lng,
+                lat: location.lat,
+                lng: location.lng,
                 start_time: new Date(form.start_time).toISOString(),
                 end_time: new Date(form.end_time).toISOString(),
             });
@@ -89,15 +87,16 @@ export function EditEventForm({ eventId }: { eventId: string }) {
                     <textarea id="edit-desc" value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} className={`${fieldCls} resize-none`} maxLength={2000} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                    <div>
-                        <label htmlFor="edit-lat" className={labelCls}>Latitude *</label>
-                        <input id="edit-lat" type="number" step="any" value={form.lat} onChange={(e) => set('lat', e.target.value)} className={fieldCls} required />
-                    </div>
-                    <div>
-                        <label htmlFor="edit-lng" className={labelCls}>Longitude *</label>
-                        <input id="edit-lng" type="number" step="any" value={form.lng} onChange={(e) => set('lng', e.target.value)} className={fieldCls} required />
-                    </div>
+                {/* Location picker pre-filled with existing coordinates */}
+                <div>
+                    <label className={labelCls}>Location *</label>
+                    {initialized && location && (
+                        <LocationPicker
+                            initialLat={location.lat}
+                            initialLng={location.lng}
+                            onChange={(lat, lng) => setLocation({ lat, lng })}
+                        />
+                    )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -116,12 +115,8 @@ export function EditEventForm({ eventId }: { eventId: string }) {
                 )}
 
                 <div className="flex gap-3">
-                    <Button type="button" variant="ghost" size="lg" onClick={() => router.back()} className="flex-1">
-                        Cancel
-                    </Button>
-                    <Button type="submit" size="lg" loading={updateEvent.isPending} className="flex-1">
-                        Save Changes
-                    </Button>
+                    <Button type="button" variant="ghost" size="lg" onClick={() => router.back()} className="flex-1">Cancel</Button>
+                    <Button type="submit" size="lg" loading={updateEvent.isPending} className="flex-1">Save Changes</Button>
                 </div>
             </form>
         </div>
