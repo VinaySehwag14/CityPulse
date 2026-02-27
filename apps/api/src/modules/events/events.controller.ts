@@ -5,7 +5,12 @@
 import type { Response, NextFunction } from 'express';
 import type { AuthenticatedRequest } from '../../middleware/requireAuth';
 import { validateCreateEvent, validateUpdateEvent } from './events.validation';
-import { createEvent, getEventById, updateEvent, deleteEvent } from './events.service';
+import {
+    createEvent,
+    getEventDetail,
+    updateEvent,
+    deleteEvent,
+} from './events.service';
 import { successResponse, errorResponse } from '../../utils';
 
 // POST /api/events
@@ -28,14 +33,14 @@ export async function createEventHandler(
     }
 }
 
-// GET /api/events/:id
+// GET /api/events/:id – returns full detail (like_count, attendees, comments)
 export async function getEventByIdHandler(
     req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
 ): Promise<void> {
     try {
-        const event = await getEventById(req.params.id);
+        const event = await getEventDetail(req.params.id);
 
         if (!event) {
             res.status(404).json(errorResponse('Event not found'));
@@ -47,6 +52,7 @@ export async function getEventByIdHandler(
         next(err);
     }
 }
+
 
 // PUT /api/events/:id
 export async function updateEventHandler(

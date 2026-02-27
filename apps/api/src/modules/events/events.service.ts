@@ -56,12 +56,52 @@ export async function createEvent(
 
 export async function getEventById(id: string): Promise<Event | null> {
     const result = await pool.query<Event>(
-        `SELECT ${EVENT_SELECT} FROM events WHERE id = $1`,
+        `SELECT ${EVENT_SELECT} FROM events e WHERE id = $1`,
+        [id]
+    );
+    return result.rows[0] ?? null;
+}
+
+// ─── Get Full Event Detail (API_SPEC.md: comments + like_count + attendees) ──
+
+export interface EventDetail extends Event {
+    like_count: number;
+    attendee_count: number;
+    attendees: Array<{ user_id: string; status: string }>;
+    comments: Array<{ id: string; user_id: string; content: string; created_at: Date }>;
+}
+
+export async function getEventDetail(id: string): Promise<EventDetail | null> {
+    const eventResult = await pool.query<Event>(
+        `SELECT ${EVENT_SELECT} FROM events e WHERE id = $1`,
         [id]
     );
 
-    return result.rows[0] ?? null;
+    if (!eventResult.rows[0]) return null;
+
+    const [likeCount, attendees, comments] = await Promise.all([
+        pool.query<{ count: number }>(
+            `SELECT COUNT(*)::int AS count FROM event_likes WHERE event_id = $1`, [id]
+        ),
+        pool.query<{ user_id: string; status: string }>(
+            `SELECT user_id, status FROM event_attendees WHERE event_id = $1`, [id]
+        ),
+        pool.query<{ id: string; user_id: string; content: string; created_at: Date }>(
+            `SELECT id, user_id, content, created_at
+       FROM event_comments WHERE event_id = $1
+       ORDER BY created_at DESC LIMIT 50`, [id]
+        ),
+    ]);
+
+    return {
+        ...eventResult.rows[0],
+        like_count: likeCount.rows[0].count,
+        attendee_count: attendees.rowCount ?? 0,
+        attendees: attendees.rows,
+        comments: comments.rows,
+    };
 }
+
 
 // ─── Update ──────────────────────────────────────────────────────────────────
 
