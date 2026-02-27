@@ -1,0 +1,11 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/(auth)/sign-in/[[...sign-in]]/page": "app/(auth)/sign-in/[[...sign-in]]/page.js",
+  "/events/new/page": "app/events/new/page.js",
+  "/(auth)/sign-up/[[...sign-up]]/page": "app/(auth)/sign-up/[[...sign-up]]/page.js",
+  "/events/[id]/page": "app/events/[id]/page.js",
+  "/search/page": "app/search/page.js",
+  "/users/[id]/page": "app/users/[id]/page.js",
+  "/page": "app/page.js",
+  "/feed/page": "app/feed/page.js"
+}
