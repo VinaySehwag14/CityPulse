@@ -1,34 +1,22 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useUser, useAuth } from '@clerk/nextjs';
-import { apiPost } from '@/lib/api-client';
+import { useEffect, useRef } from 'react';
+import { useAuth } from '@clerk/nextjs';
+import { useSyncUser } from '@/hooks/useUser';
 
-// Fires POST /api/auth/sync once per session when the user signs in.
-// Upserts the Clerk user into the Neon DB (FEATURES.md §1).
-// Silently ignores errors — sync failure should not break the UI.
 export default function UserSyncProvider() {
-    const { isSignedIn, isLoaded } = useUser();
-    const { getToken } = useAuth();
+    const { isSignedIn, isLoaded } = useAuth();
+    const syncMutation = useSyncUser();
+
+    // We only want to trigger this ONCE per page load / session
+    const hasSyncedRef = useRef(false);
 
     useEffect(() => {
-        if (!isLoaded || !isSignedIn) return;
+        if (isLoaded && isSignedIn && !hasSyncedRef.current) {
+            hasSyncedRef.current = true;
+            syncMutation.mutate();
+        }
+    }, [isLoaded, isSignedIn, syncMutation]);
 
-        // Use sessionStorage to sync at most once per browser session
-        const SYNC_KEY = 'citypulse_synced';
-        if (sessionStorage.getItem(SYNC_KEY)) return;
-
-        (async () => {
-            try {
-                const token = await getToken();
-                if (!token) return;
-                await apiPost('/auth/sync', {}, token);
-                sessionStorage.setItem(SYNC_KEY, '1');
-            } catch {
-                // Silent fail — sync is best-effort
-            }
-        })();
-    }, [isLoaded, isSignedIn, getToken]);
-
-    return null; // renders nothing
+    return null;
 }
