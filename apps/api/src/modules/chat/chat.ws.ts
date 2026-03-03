@@ -76,7 +76,8 @@ export function createChatWsServer(): WebSocketServer {
 
                 // Broadcast to all room members including sender
                 broadcast(ws.eventId, { type: 'message', data: message });
-            } catch {
+            } catch (err) {
+                console.error('[WS] Error processing message:', err);
                 ws.send(JSON.stringify({ error: 'Failed to process message' }));
             }
         });
