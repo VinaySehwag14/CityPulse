@@ -10,7 +10,10 @@ import { env } from '../../config/env';
 import { isEventActive, saveMessage } from './chat.service';
 import type { WsIncomingMessage } from './chat.types';
 
-const clerkClient = createClerkClient({ secretKey: env.CLERK_SECRET_KEY });
+const clerkClient = createClerkClient({
+    secretKey: env.CLERK_SECRET_KEY,
+    publishableKey: env.CLERK_PUBLISHABLE_KEY
+});
 
 // Rooms: eventId → Set of connected WebSockets (with userId attached)
 interface AuthenticatedSocket extends WebSocket {
@@ -100,6 +103,7 @@ export async function handleUpgrade(
 
         // Expect: /chat/:eventId
         if (pathParts[0] !== 'chat' || !pathParts[1]) {
+            console.error('[WS] Invalid path:', pathParts);
             socket.destroy();
             return;
         }
@@ -108,6 +112,7 @@ export async function handleUpgrade(
         const token = url.searchParams.get('token');
 
         if (!token) {
+            console.error('[WS] Missing token');
             socket.destroy();
             return;
         }
@@ -120,12 +125,14 @@ export async function handleUpgrade(
         );
 
         if (!requestState.isSignedIn) {
+            console.error('[WS] Not signed in. Request state:', requestState);
             socket.destroy();
             return;
         }
 
         const auth = requestState.toAuth();
         if (!auth.userId) {
+            console.error('[WS] No user ID in auth object');
             socket.destroy();
             return;
         }
@@ -133,6 +140,7 @@ export async function handleUpgrade(
         // Check event is active before allowing join
         const active = await isEventActive(eventId);
         if (!active) {
+            console.error(`[WS] Event ${eventId} is not active. Disconnecting user ${auth.userId}`);
             socket.destroy();
             return;
         }
@@ -143,8 +151,10 @@ export async function handleUpgrade(
             authWs.eventId = eventId;
             joinRoom(eventId, authWs);
             wss.emit('connection', authWs, req);
+            console.log(`[WS] User ${auth.userId} joined room ${eventId}`);
         });
-    } catch {
+    } catch (err) {
+        console.error('[WS] Upgrade exception:', err);
         socket.destroy();
     }
 }
