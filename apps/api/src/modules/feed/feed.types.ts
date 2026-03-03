@@ -14,6 +14,7 @@ export interface FeedEvent extends Event {
 export interface FeedQuery {
     page: number;
     limit: number;
+    clerkId?: string;
 }
 
 export interface FeedResponse {

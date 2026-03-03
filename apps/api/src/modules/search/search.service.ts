@@ -3,6 +3,7 @@
 // All DB access here. No HTTP objects. Per AI_RULES.md §1.
 
 import pool from '../../config/db';
+import { generateEmbedding } from '../ai/ai.service';
 import type { SearchQuery, SearchResult } from './search.types';
 
 export async function searchEvents(query: SearchQuery): Promise<SearchResult[]> {
@@ -15,13 +16,23 @@ export async function searchEvents(query: SearchQuery): Promise<SearchResult[]> 
   const values: unknown[] = [];
   let paramIdx = 1;
 
-  // Text search on title + description
+  let searchEmbedding: number[] | null = null;
+  let embeddingParamIdx: number | null = null;
+
+  // Text search via AI Semantic Vector matching (or fallback to ILIKE)
   if (q) {
-    conditions.push(
-      `(e.title ILIKE $${paramIdx} OR e.description ILIKE $${paramIdx})`
-    );
-    values.push(`%${q}%`);
-    paramIdx++;
+    searchEmbedding = await generateEmbedding(q);
+
+    if (searchEmbedding) {
+      embeddingParamIdx = paramIdx;
+      values.push(JSON.stringify(searchEmbedding));
+      paramIdx++;
+    } else {
+      // Fallback
+      conditions.push(`(e.title ILIKE $${paramIdx} OR e.description ILIKE $${paramIdx})`);
+      values.push(`%${q}%`);
+      paramIdx++;
+    }
   }
 
   // Geo radius filter using PostGIS ST_DWithin
@@ -49,6 +60,15 @@ export async function searchEvents(query: SearchQuery): Promise<SearchResult[]> 
       )`
     : 'NULL';
 
+  // Dynamic Order By depending on search parameters
+  let orderBy = 'e.created_at DESC';
+  if (searchEmbedding) {
+    orderBy = `(e.embedding <=> $${embeddingParamIdx}) ASC`;
+    if (hasGeo) orderBy += ', distance_km ASC';
+  } else if (hasGeo) {
+    orderBy = 'distance_km ASC';
+  }
+
   const sql = `
     SELECT
       e.id,
@@ -60,12 +80,13 @@ export async function searchEvents(query: SearchQuery): Promise<SearchResult[]> 
       e.end_time,
       e.created_by,
       e.created_at,
+      e.tags,
       (SELECT COUNT(*)::int FROM event_likes     WHERE event_id = e.id) AS like_count,
       (SELECT COUNT(*)::int FROM event_attendees WHERE event_id = e.id) AS attendee_count,
       ${distanceExpr}                                                   AS distance_km
     FROM events e
     WHERE ${conditions.join(' AND ')}
-    ORDER BY ${hasGeo ? 'distance_km ASC' : 'e.created_at DESC'}
+    ORDER BY ${orderBy}
     LIMIT 50
   `;
 

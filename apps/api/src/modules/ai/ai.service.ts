@@ -43,3 +43,33 @@ Description: ${description || 'No description provided'}
         return [];
     }
 }
+
+/**
+ * Generates a 768-dimensional vector embedding for semantic search and personalized ranking.
+ * Uses the text-embedding-004 model.
+ */
+export async function generateEmbedding(text: string): Promise<number[] | null> {
+    if (!env.GEMINI_API_KEY) {
+        console.warn('GEMINI_API_KEY is not set. Skipping embedding generation.');
+        return null;
+    }
+
+    try {
+        const response = await ai.models.embedContent({
+            model: 'gemini-embedding-001',
+            contents: text,
+        });
+
+        // The SDK returns an array of embeddings (one for each input if batching).
+        const values = response.embeddings?.[0]?.values;
+        if (!values || !Array.isArray(values)) {
+            console.error('[AI Service] Invalid embedding response format.');
+            return null;
+        }
+
+        return values;
+    } catch (err) {
+        console.error('[AI Service] Error generating embedding:', err);
+        return null;
+    }
+}

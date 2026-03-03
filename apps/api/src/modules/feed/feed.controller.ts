@@ -2,7 +2,8 @@
 // HTTP layer only. Parses query params, calls feed.service, returns response.
 // No database access. No business logic. Per AI_RULES.md §1.
 
-import type { Request, Response, NextFunction } from 'express';
+import type { Response, NextFunction } from 'express';
+import type { AuthenticatedRequest } from '../../middleware/requireAuth';
 import { getFeed } from './feed.service';
 import { successResponse } from '../../utils';
 
@@ -12,7 +13,7 @@ const MAX_LIMIT = 100;
 
 // GET /api/feed?page=1&limit=20
 export async function getFeedHandler(
-    req: Request,
+    req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
 ): Promise<void> {
@@ -23,7 +24,11 @@ export async function getFeedHandler(
             Math.max(1, parseInt(String(req.query.limit ?? DEFAULT_LIMIT), 10) || DEFAULT_LIMIT)
         );
 
-        const result = await getFeed({ page, limit });
+        const result = await getFeed({
+            page,
+            limit,
+            clerkId: req.auth?.userId
+        });
         res.status(200).json(successResponse(result));
     } catch (err) {
         next(err);

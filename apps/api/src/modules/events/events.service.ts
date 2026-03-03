@@ -5,7 +5,7 @@
 
 import pool from '../../config/db';
 import { resolveDbUserId } from '../../lib/resolveUser';
-import { generateTags } from '../ai/ai.service';
+import { generateTags, generateEmbedding } from '../ai/ai.service';
 import type { Event, CreateEventDto, UpdateEventDto } from './events.types';
 
 
@@ -32,11 +32,15 @@ export async function createEvent(
 ): Promise<Event> {
     const dbUserId = await resolveDbUserId(clerkId);
 
-    // Generate AI Tags
-    const tags = await generateTags(dto.title, dto.description || null);
+    // Generate AI Tags & Embedding
+    const [tags, embedding] = await Promise.all([
+        generateTags(dto.title, dto.description || null),
+        generateEmbedding(`${dto.title}. ${dto.description || ''}`)
+    ]);
+    const embeddingStr = embedding ? JSON.stringify(embedding) : null;
 
     const result = await pool.query<Event>(
-        `INSERT INTO events (id, title, description, location, start_time, end_time, created_by, tags)
+        `INSERT INTO events (id, title, description, location, start_time, end_time, created_by, tags, embedding)
      VALUES (
        gen_random_uuid(),
        $1,
@@ -45,7 +49,8 @@ export async function createEvent(
        $5,
        $6,
        $7,
-       $8
+       $8,
+       $9
      )
      RETURNING ${EVENT_SELECT}`,
         [
@@ -56,7 +61,8 @@ export async function createEvent(
             dto.start_time,
             dto.end_time,
             dbUserId,
-            tags
+            tags,
+            embeddingStr
         ]
     );
 
@@ -144,15 +150,28 @@ export async function updateEvent(
     const setClauses: string[] = [];
     const values: unknown[] = [];
     let paramIndex = 1;
+    let needsNewEmbedding = false;
 
     if (dto.title !== undefined) {
         setClauses.push(`title = $${paramIndex++}`);
         values.push(dto.title.trim());
+        needsNewEmbedding = true;
     }
 
     if (dto.description !== undefined) {
         setClauses.push(`description = $${paramIndex++}`);
         values.push(dto.description);
+        needsNewEmbedding = true;
+    }
+
+    if (needsNewEmbedding) {
+        const evtTitle = dto.title ?? existing.title;
+        const evtDesc = dto.description ?? existing.description;
+        const newEmbedding = await generateEmbedding(`${evtTitle}. ${evtDesc || ''}`);
+        if (newEmbedding) {
+            setClauses.push(`embedding = $${paramIndex++}`);
+            values.push(JSON.stringify(newEmbedding));
+        }
     }
 
     // Update location only if both lat and lng are provided
