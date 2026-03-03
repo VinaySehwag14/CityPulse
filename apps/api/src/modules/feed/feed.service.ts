@@ -30,6 +30,7 @@ export async function getFeed(query: FeedQuery): Promise<FeedResponse> {
       e.end_time,
       e.created_by,
       e.created_at,
+      e.tags,
       (SELECT COUNT(*)::int FROM event_likes    WHERE event_id = e.id) AS like_count,
       (SELECT COUNT(*)::int FROM event_attendees WHERE event_id = e.id) AS attendee_count,
       (${IS_LIVE_SQL})                                                  AS is_live,
