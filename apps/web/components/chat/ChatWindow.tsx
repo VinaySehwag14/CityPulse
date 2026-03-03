@@ -26,6 +26,7 @@ export default function ChatWindow({ eventId }: { eventId: string }) {
         if (!token) return;
 
         const wsUrl = `${process.env.NEXT_PUBLIC_API_URL?.replace('http', 'ws')?.replace('/api', '')}/chat/${eventId}?token=${token}`;
+        setError(''); // Clear any previous errors on new connection attempt
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
