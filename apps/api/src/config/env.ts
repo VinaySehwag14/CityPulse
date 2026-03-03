@@ -16,4 +16,6 @@ export const env = {
   DATABASE_URL: requireEnv('DATABASE_URL'),
   CLERK_SECRET_KEY: requireEnv('CLERK_SECRET_KEY'),
   CLERK_PUBLISHABLE_KEY: requireEnv('CLERK_PUBLISHABLE_KEY'),
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? '',
 } as const;
+export default env;

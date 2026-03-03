@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS events (
   end_time    TIMESTAMPTZ   NOT NULL,
   created_by  UUID          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  tags        TEXT[]        NOT NULL DEFAULT '{}',
 
   -- FEATURES.md §2: end_time must be after start_time
   CONSTRAINT events_end_after_start CHECK (end_time > start_time)

@@ -36,6 +36,17 @@ export default function EventCard({ event }: EventCardProps) {
                     <p className="text-[#8b949e] text-sm mb-3 line-clamp-2">{event.description}</p>
                 )}
 
+                {/* AI Tags */}
+                {event.tags && event.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                        {event.tags.map((tag) => (
+                            <span key={tag} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#1c2128] text-[#0caee8] border border-[#30363d]">
+                                #{tag}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
                 {/* Meta */}
                 <div className="flex flex-col gap-1.5 text-xs text-[#8b949e] mb-3">
                     <div className="flex items-center gap-1.5">

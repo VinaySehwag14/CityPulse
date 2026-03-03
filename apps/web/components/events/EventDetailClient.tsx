@@ -90,6 +90,17 @@ export default function EventDetailClient({ eventId }: { eventId: string }) {
                     <p className="text-[#8b949e] text-base leading-relaxed">{event.description}</p>
                 )}
 
+                {/* AI Tags */}
+                {event.tags && event.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                        {event.tags.map((tag) => (
+                            <span key={tag} className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[#1c2128] text-[#0caee8] border border-[#30363d]">
+                                #{tag}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
                 {/* Owner actions */}
                 {isOwner && (
                     <div className="flex items-center gap-2 pt-2">

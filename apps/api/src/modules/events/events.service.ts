@@ -5,6 +5,7 @@
 
 import pool from '../../config/db';
 import { resolveDbUserId } from '../../lib/resolveUser';
+import { generateTags } from '../ai/ai.service';
 import type { Event, CreateEventDto, UpdateEventDto } from './events.types';
 
 
@@ -19,7 +20,8 @@ const EVENT_SELECT = `
   start_time,
   end_time,
   created_by,
-  created_at
+  created_at,
+  tags
 `;
 
 // ─── Create ─────────────────────────────────────────────────────────────────
@@ -29,8 +31,12 @@ export async function createEvent(
     dto: CreateEventDto
 ): Promise<Event> {
     const dbUserId = await resolveDbUserId(clerkId);
+
+    // Generate AI Tags
+    const tags = await generateTags(dto.title, dto.description || null);
+
     const result = await pool.query<Event>(
-        `INSERT INTO events (id, title, description, location, start_time, end_time, created_by)
+        `INSERT INTO events (id, title, description, location, start_time, end_time, created_by, tags)
      VALUES (
        gen_random_uuid(),
        $1,
@@ -38,7 +44,8 @@ export async function createEvent(
        ST_SetSRID(ST_MakePoint($3, $4), 4326),
        $5,
        $6,
-       $7
+       $7,
+       $8
      )
      RETURNING ${EVENT_SELECT}`,
         [
@@ -49,6 +56,7 @@ export async function createEvent(
             dto.start_time,
             dto.end_time,
             dbUserId,
+            tags
         ]
     );
 

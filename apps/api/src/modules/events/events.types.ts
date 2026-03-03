@@ -11,6 +11,7 @@ export interface Event {
     end_time: Date;
     created_by: string;
     created_at: Date;
+    tags: string[];
 }
 
 export interface CreateEventDto {

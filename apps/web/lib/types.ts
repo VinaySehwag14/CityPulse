@@ -21,6 +21,7 @@ export interface Event {
     end_time: string;
     created_by: string;
     created_at: string;
+    tags?: string[];
 }
 
 export interface EventDetail extends Event {

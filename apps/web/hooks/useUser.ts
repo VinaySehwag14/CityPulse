@@ -44,3 +44,16 @@ export function useToggleFollow(targetUserId: string) {
         },
     });
 }
+
+// F9: Sync User
+export function useSyncUser() {
+    const { getToken, isLoaded, isSignedIn } = useAuth();
+    return useMutation({
+        mutationFn: async () => {
+            if (!isLoaded || !isSignedIn) return null;
+            const token = await getToken();
+            if (!token) return null;
+            return apiPost<{ user: User }>('/auth/sync', {}, token);
+        },
+    });
+}
