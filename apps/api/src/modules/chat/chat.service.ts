@@ -5,6 +5,7 @@
 //   - Messages persisted in event_comments table
 
 import pool from '../../config/db';
+import { resolveDbUserId } from '../../lib/resolveUser';
 import type { ChatMessage } from './chat.types';
 
 // Guard: is the event active right now?
@@ -19,15 +20,16 @@ export async function isEventActive(eventId: string): Promise<boolean> {
 
 // Save a chat message (reuses event_comments table)
 export async function saveMessage(
-    userId: string,
+    clerkId: string,
     eventId: string,
     content: string
 ): Promise<ChatMessage> {
+    const dbUserId = await resolveDbUserId(clerkId);
     const result = await pool.query<ChatMessage>(
         `INSERT INTO event_comments (id, user_id, event_id, content)
      VALUES (gen_random_uuid(), $1, $2, $3)
      RETURNING id, event_id, user_id, content, created_at`,
-        [userId, eventId, content]
+        [dbUserId, eventId, content]
     );
     return result.rows[0];
 }
