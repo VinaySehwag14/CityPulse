@@ -30,10 +30,17 @@ export default function ChatWindow({ eventId }: { eventId: string }) {
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
-        ws.onopen = () => setConnected(true);
-        ws.onclose = () => setConnected(false);
-        ws.onerror = () => setError('Connection error');
+        ws.onopen = () => {
+            if (wsRef.current === ws) setConnected(true);
+        };
+        ws.onclose = () => {
+            if (wsRef.current === ws) setConnected(false);
+        };
+        ws.onerror = () => {
+            if (wsRef.current === ws) setError('Connection error');
+        };
         ws.onmessage = (e) => {
+            if (wsRef.current !== ws) return;
             try {
                 const parsed = JSON.parse(e.data as string) as { type: string; data: ChatMsg; error?: string };
                 if (parsed.error) { setError(parsed.error); return; }
