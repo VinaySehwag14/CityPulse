@@ -14,6 +14,7 @@ import Spinner from '@/components/ui/Spinner';
 import Avatar from '@/components/ui/Avatar';
 import ChatWindow from '@/components/chat/ChatWindow';
 import MiniMap from '@/components/map/MiniMap';
+import ShareButton from '@/components/events/ShareButton';
 
 function formatEventTime(startIso: string, endIso: string) {
     const start = new Date(startIso);
@@ -48,7 +49,6 @@ export default function EventDetailClient({ eventId }: { eventId: string }) {
 
     const [comment, setComment] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(false);
-    const [justCopied, setJustCopied] = useState(false);
 
     if (isLoading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>;
     if (isError || !event) return <p className="text-center text-[#8b949e] py-20">Event not found.</p>;
@@ -68,34 +68,6 @@ export default function EventDetailClient({ eventId }: { eventId: string }) {
         router.push('/feed');
     };
 
-    const handleShare = async () => {
-        const url = window.location.href;
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: event.title,
-                    text: `Check out ${event.title} on CityPulse!`,
-                    url: url
-                });
-            } catch (err) {
-                // User cancelled or share failed, fallback to copy
-                if ((err as Error).name !== 'AbortError') copyToClipboard(url);
-            }
-        } else {
-            copyToClipboard(url);
-        }
-    };
-
-    const copyToClipboard = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-            setJustCopied(true);
-            setTimeout(() => setJustCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy', err);
-        }
-    };
-
     return (
         <div className="max-w-2xl mx-auto px-4 py-8 space-y-8 animate-fade-in pb-24">
 
@@ -110,9 +82,7 @@ export default function EventDetailClient({ eventId }: { eventId: string }) {
                     </div>
 
                     <div className="flex gap-2 shrink-0">
-                        <Button variant="secondary" size="sm" onClick={handleShare} className="h-9 w-9 p-0 rounded-full" aria-label="Share">
-                            {justCopied ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4" />}
-                        </Button>
+                        <ShareButton title={event.title} description={event.description!} />
                     </div>
                 </div>
 
