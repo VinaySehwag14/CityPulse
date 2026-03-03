@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import { apiGet } from '@/lib/api-client';
 import Spinner from '@/components/ui/Spinner';
 import Button from '@/components/ui/Button';
 
@@ -50,6 +51,14 @@ export default function ChatWindow({ eventId }: { eventId: string }) {
                 }
             } catch { /* ignore malformed */ }
         };
+
+        // Add: Fetch historical messages for this lobby
+        apiGet<ChatMsg[]>(`/events/${eventId}/comments`).then((history) => {
+            // Comments endpoint returns all comments (including chat which are saved as comments)
+            // We can use this to pre-fill the chat lobby
+            setMessages(history.slice(0, 50));
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }).catch(err => console.error("Could not load history", err));
 
         return () => ws.close();
     }, [eventId, getToken]);
