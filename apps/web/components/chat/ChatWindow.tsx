@@ -27,7 +27,7 @@ export default function ChatWindow({ eventId }: { eventId: string }) {
         if (!token) return;
 
         const wsUrl = `${process.env.NEXT_PUBLIC_API_URL?.replace('http', 'ws')?.replace('/api', '')}/chat/${eventId}?token=${token}`;
-        setError(''); // Clear any previous errors on new connection attempt
+        setError('');
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
@@ -46,22 +46,29 @@ export default function ChatWindow({ eventId }: { eventId: string }) {
                 const parsed = JSON.parse(e.data as string) as { type: string; data: ChatMsg; error?: string };
                 if (parsed.error) { setError(parsed.error); return; }
                 if (parsed.type === 'message') {
-                    setMessages((prev) => [parsed.data, ...prev].slice(0, 100));
+                    setMessages((prev) => {
+                        // Avoid duplicates if WS gets history message
+                        if (prev.some(m => m.id === parsed.data.id)) return prev;
+                        return [parsed.data, ...prev].slice(0, 100);
+                    });
                     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
                 }
             } catch { /* ignore malformed */ }
         };
 
-        // Add: Fetch historical messages for this lobby
-        apiGet<ChatMsg[]>(`/events/${eventId}/comments`).then((history) => {
-            // Comments endpoint returns all comments (including chat which are saved as comments)
-            // We can use this to pre-fill the chat lobby
-            setMessages(history.slice(0, 50));
-            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }).catch(err => console.error("Could not load history", err));
+        // Fetch historical messages for this lobby using the auth token
+        apiGet<ChatMsg[]>(`/events/${eventId}/comments`, token).then((history) => {
+            if (wsRef.current === ws) {
+                setMessages(history.slice(0, 50));
+                bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }
+        }).catch(err => {
+            if (wsRef.current === ws) setError(err.message || "History error");
+        });
 
         return () => ws.close();
-    }, [eventId, getToken]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [eventId]);
 
     useEffect(() => {
         if (isSignedIn) {
