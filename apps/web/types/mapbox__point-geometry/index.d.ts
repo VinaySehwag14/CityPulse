@@ -1,9 +1,3 @@
-// Ambient module shim for @mapbox/point-geometry
-// mapbox-gl v3 transitively includes @mapbox/point-geometry which declares itself
-// as 'mapbox__point-geometry' in its package.json types field but the actual
-// type file doesn't re-export under that name, causing:
-//   "Cannot find type definition file for 'mapbox__point-geometry'."
-// Declaring it here suppresses the error without breaking any types.
 declare module 'mapbox__point-geometry' {
     export default class Point {
         x: number;
