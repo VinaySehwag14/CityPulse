@@ -7,8 +7,8 @@ const pool = new Pool({
     connectionString: env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
     max: 10,            // max client connections from this API instance
-    idleTimeoutMillis: 30_000,  // release idle connections after 30s
-    connectionTimeoutMillis: 5_000, // fail fast if cannot connect within 5s
+    idleTimeoutMillis: 60_000,  // release idle connections after 1 min (prevents constant reconnecting)
+    connectionTimeoutMillis: 20_000, // wait up to 20s for Neon DB to "wake up" from sleep
 });
 
 pool.on('error', (err) => {
