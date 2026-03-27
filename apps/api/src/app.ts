@@ -16,6 +16,15 @@ app.use(
     })
 );
 
+// API root & status (for Render health check)
+app.get('/', (req, res) => {
+    res.json({ 
+        success: true, 
+        message: 'CityPulse API is live and well! 🚀',
+        version: '0.1.0'
+    });
+});
+
 // API routes – all under /api
 app.use('/api', apiRouter);
 
