@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0caee8"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <!-- Map pin base -->
+  <path d="M16 3C11.582 3 8 6.582 8 11C8 16.5 16 28 16 28C16 28 24 16.5 24 11C24 6.582 20.418 3 16 3Z" fill="url(#g1)"/>
+  <!-- Pulse wave lines inside pin -->
+  <path d="M10 11H12L13.5 8.5L15 13.5L16.5 9L18 12.5L19.5 11H22" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

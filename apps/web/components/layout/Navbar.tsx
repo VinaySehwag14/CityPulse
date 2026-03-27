@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
-import { Zap, Search, PlusCircle, Home } from 'lucide-react';
+import { Search, PlusCircle, Home } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const NAV_LINKS = [
@@ -12,6 +12,24 @@ const NAV_LINKS = [
     { href: '/events/new', label: 'Create', icon: PlusCircle },
 ];
 
+/** CityPulse brand mark — map pin with pulse wave */
+function CityPulseLogo({ size = 28 }: { size?: number }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="cpGrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#0caee8" />
+                    <stop offset="100%" stopColor="#38bdf8" />
+                </linearGradient>
+            </defs>
+            {/* Map pin */}
+            <path d="M16 3C11.582 3 8 6.582 8 11C8 16.5 16 28 16 28C16 28 24 16.5 24 11C24 6.582 20.418 3 16 3Z" fill="url(#cpGrad)" />
+            {/* Pulse wave inside pin */}
+            <path d="M10 11H12L13.5 8.5L15 13.5L16.5 9L18 12.5L19.5 11H22" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+}
+
 export default function Navbar() {
     const pathname = usePathname();
 
@@ -19,9 +37,9 @@ export default function Navbar() {
         <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-[#30363d]">
             <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-                    <Zap className="w-5 h-5 text-[#0caee8]" fill="currentColor" />
-                    <span className="text-gradient">CityPulse</span>
+                <Link href="/" className="flex items-center gap-2 font-bold text-lg group">
+                    <CityPulseLogo size={28} />
+                    <span className="text-gradient tracking-tight font-display font-bold">CityPulse</span>
                 </Link>
 
                 {/* Nav links */}

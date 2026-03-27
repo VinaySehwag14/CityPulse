@@ -22,6 +22,11 @@
                 "name": "next"
             }
         ],
+        "baseUrl": ".",
+        "typeRoots": [
+            "./node_modules/@types",
+            "./types"
+        ],
         "paths": {
             "@/*": [
                 "./*"

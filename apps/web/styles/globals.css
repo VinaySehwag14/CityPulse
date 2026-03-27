@@ -23,8 +23,14 @@ html { scroll-behavior: smooth; }
 body {
   background-color: var(--bg);
   color: var(--text-primary);
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Space Grotesk for all headings — gives a premium, geometric feel */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display), system-ui, sans-serif;
+  letter-spacing: -0.03em;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────── */
@@ -66,3 +72,14 @@ body {
 .live-dot {
   animation: livePulse 1.5s ease-in-out infinite;
 }
+
+/* ── Clerk Overrides ────────────────────────────────────────────── */
+.cl-internal-ph67tr, .cl-internal-f40pj9 {
+  display: none !important;
+}
+
+/* Hide "Development mode" badge at the bottom — more robust selector */
+[data-clerk-br] {
+  display: none !important;
+}
+

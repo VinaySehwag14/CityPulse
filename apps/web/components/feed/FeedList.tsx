@@ -4,6 +4,7 @@ import { useRef, useCallback, useState, useMemo } from 'react';
 import { useFeed } from '@/hooks/useFeed';
 import EventCard from '@/components/events/EventCard';
 import Spinner from '@/components/ui/Spinner';
+import FunnyLoader from '@/components/ui/FunnyLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import type { FeedEvent } from '@/lib/types';
 
@@ -44,13 +45,7 @@ export default function FeedList() {
     const liveCount = allEvents.filter((e) => e.is_live).length;
 
     if (isLoading) {
-        return (
-            <div className="flex flex-col gap-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="glass rounded-2xl p-4 h-40 animate-pulse bg-[#161b22]" />
-                ))}
-            </div>
-        );
+        return <FunnyLoader />;
     }
 
     if (isError) {
