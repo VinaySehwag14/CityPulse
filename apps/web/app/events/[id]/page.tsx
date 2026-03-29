@@ -22,10 +22,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
     const event = await getEventData(id);
     
-    // Dynamic host detection for Vercel/Preview deployments
-    // This fixed the 'link only' issue on WhatsApp by ensuring absolute URLs match the environment
+    // Explicit dynamic host detection for preview deployment (city-pulse-eosin.vercel.app)
     const headerList = await headers();
-    const host = headerList.get('host') || 'citypulse.vercel.app';
+    const host = headerList.get('host') || 'city-pulse-eosin.vercel.app';
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const siteUrl = `${protocol}://${host}`;
     const absoluteEventUrl = `${siteUrl}/events/${id}`;
@@ -37,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
         title: event.title,
         description: event.description?.slice(0, 160) ?? `Join ${event.title} on CityPulse. Hyperlocal event discovery.`,
-        metadataBase: new URL(siteUrl),
+        metadataBase: new URL(siteUrl), // Crucial: Bases all relative links of this deployment
         openGraph: {
             title: event.title,
             description: event.description ?? `Join us for ${event.title} on CityPulse.`,
@@ -50,7 +49,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
                     width: 1200,
                     height: 630,
                     type: 'image/png',
-                    alt: `Invitation for ${event.title}`,
+                    alt: `VIP Invitation for ${event.title}`,
                 },
             ],
             type: 'website',
