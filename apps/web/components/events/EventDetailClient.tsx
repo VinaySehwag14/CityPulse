@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
-import { Heart, Users, Calendar, MessageCircle, Pencil, Trash2, Share2, Copy, CheckCircle2 } from 'lucide-react';
+import { Heart, Users, Calendar, MessageCircle, Pencil, Trash2, Share2, Copy, CheckCircle2, Sparkles as SparklesIcon } from 'lucide-react';
 
 import { useEvent, useDeleteEvent } from '@/hooks/useEvents';
 import { useLike, useAttend, useAddComment } from '@/hooks/useInteractions';
@@ -15,6 +15,7 @@ import Avatar from '@/components/ui/Avatar';
 import ChatWindow from '@/components/chat/ChatWindow';
 import MiniMap from '@/components/map/MiniMap';
 import ShareButton from '@/components/events/ShareButton';
+import InvitationModal from '@/components/events/InvitationModal';
 
 function formatEventTime(startIso: string, endIso: string) {
     const start = new Date(startIso);
@@ -49,6 +50,7 @@ export default function EventDetailClient({ eventId }: { eventId: string }) {
 
     const [comment, setComment] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(false);
+    const [showInviteModal, setShowInviteModal] = useState(false);
 
     if (isLoading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>;
     if (isError || !event) return <p className="text-center text-[#8b949e] py-20">Event not found.</p>;
@@ -155,7 +157,47 @@ export default function EventDetailClient({ eventId }: { eventId: string }) {
                         </p>
                     </div>
                 </div>
+
+                {/* Magic Invitation Card - Premium Trigger Banner */}
+                <div 
+                    onClick={() => setShowInviteModal(true)}
+                    className="sm:col-span-2 relative overflow-hidden group cursor-pointer rounded-2xl transition-all duration-500 hover:-translate-y-1 active:scale-[0.98] shadow-lg hover:shadow-[0_15px_40px_rgba(12,174,232,0.25)] border border-[#0caee8]/30 bg-[#1c2128]"
+                >
+                    {/* Animated Shimmer Background */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#0caee8]/30 via-transparent to-[#ff9d00]/15" />
+                    <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12" />
+                    
+                    <div className="relative p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-5">
+                        <div className="w-14 h-14 rounded-2xl bg-[#0d1117] border border-white/10 flex items-center justify-center shrink-0 group-hover:border-[#0caee8]/50 transition-all duration-500 shadow-2xl group-hover:scale-110">
+                            <SparklesIcon className="w-8 h-8 text-[#ff9d00] group-hover:text-[#0caee8] transition-all duration-500 pulse-slow group-hover:rotate-12" />
+                        </div>
+                        <div className="flex-1 text-center sm:text-left space-y-1.5">
+                            <div className="flex flex-col sm:flex-row items-center gap-3">
+                                <p className="font-extrabold text-white text-lg tracking-tight">
+                                    Magic Invitation Pass
+                                </p>
+                                <span className="text-[10px] font-black bg-gradient-to-r from-[#ff9d00] to-[#ff5000] text-white px-2 py-0.5 rounded shadow-lg uppercase tracking-wider animate-pulse">
+                                    PREMIUM
+                                </span>
+                            </div>
+                            <p className="text-sm text-[#8b949e] font-medium leading-relaxed group-hover:text-white/90 transition-colors">
+                                Generate a stunning, personalized invitation pass with a scannable QR to share on your Social Stories.
+                            </p>
+                        </div>
+                        <div className="px-5 py-2.5 rounded-xl bg-[#0caee8] text-[#0d1117] text-sm font-bold shadow-lg hover:bg-white transition-colors group-hover:translate-x-1 duration-500 flex items-center gap-2">
+                            Create Now
+                            <SparklesIcon className="w-4 h-4" />
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            {/* Modal */}
+            <InvitationModal 
+                event={event} 
+                isOpen={showInviteModal} 
+                onClose={() => setShowInviteModal(false)} 
+            />
 
             {/* Mini Map */}
             <div className="space-y-3">
