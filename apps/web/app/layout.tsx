@@ -18,21 +18,75 @@ const dmSans = DM_Sans({
     weight: ['300', '400', '500', '600', '700'],
 });
 
+// Resolve the base URL for metadata (sitemap, OG images, canonical)
+const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : 'http://localhost:3000');
+
 export const metadata: Metadata = {
-    title: { default: 'CityPulse', template: '%s | CityPulse' },
-    description: 'Discover what\'s happening around you right now.',
-    keywords: ['events', 'local', 'discovery', 'hyperlocal', 'city', 'india'],
+    metadataBase: new URL(siteUrl),
+
+    title: { default: 'CityPulse – Discover Events Near You', template: '%s | CityPulse' },
+    description:
+        'CityPulse is a hyperlocal event discovery platform. Find bhandaras, garba nights, meetups, house parties & more happening around you right now.',
+    keywords: [
+        'events near me', 'local events', 'hyperlocal', 'city events',
+        'bhandara near me', 'garba night', 'jagrata', 'live events india',
+        'event discovery', 'things to do near me', 'meetups', 'house party',
+        'CityPulse', 'real-time events', 'trending events',
+    ],
+
+    // ── Google Search Console Verification ──────────────────────────
+    verification: {
+        google: 'SSr6osljNjF_lr1hc4mPHjCjFdpMer_Xbv0BhQKT2VM',
+    },
+
+    // ── Icons ───────────────────────────────────────────────────────
     icons: {
         icon: '/favicon.svg',
         shortcut: '/favicon.svg',
         apple: '/favicon.svg',
     },
+
+    // ── Canonical URL ───────────────────────────────────────────────
+    alternates: {
+        canonical: '/',
+    },
+
+    // ── OpenGraph (Facebook, LinkedIn, WhatsApp) ────────────────────
     openGraph: {
         type: 'website',
         siteName: 'CityPulse',
-        title: 'CityPulse – What\'s happening around you',
-        description: 'Discover live and upcoming events in your city.',
+        title: 'CityPulse – Discover Events Near You',
+        description:
+            'Find bhandaras, garba, meetups, house parties & live events in your city. AI-powered hyperlocal discovery.',
+        locale: 'en_IN',
+        url: '/',
     },
+
+    // ── Twitter Card ────────────────────────────────────────────────
+    twitter: {
+        card: 'summary_large_image',
+        title: 'CityPulse – Discover Events Near You',
+        description:
+            'Real-time, AI-powered event discovery for your city. Bhandaras, garba, meetups & more.',
+    },
+
+    // ── Misc SEO ────────────────────────────────────────────────────
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            'max-video-preview': -1,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+        },
+    },
+    category: 'events',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
