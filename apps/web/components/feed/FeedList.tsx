@@ -57,22 +57,22 @@ export default function FeedList() {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-6">
             {/* Section tabs */}
-            <div className="flex gap-1 bg-[#161b22] border border-[#30363d] rounded-2xl p-1">
+            <div className="flex gap-1 bg-[#161b22] border border-[#30363d] rounded-2xl p-1 shadow-lg">
                 {TABS.map(({ id, label, emoji }) => (
                     <button
                         key={id}
                         onClick={() => setActiveTab(id)}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-sm font-medium transition-all duration-200 ${activeTab === id
-                                ? 'bg-[#0caee8] text-white shadow-sm'
-                                : 'text-[#8b949e] hover:text-[#e6edf3]'
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-sm font-semibold transition-all duration-200 ${activeTab === id
+                                ? 'bg-[#0caee8] text-white shadow-md scale-[1.02]'
+                                : 'text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/5'
                             }`}
                     >
                         <span className="hidden sm:inline">{emoji}</span>
                         {label}
                         {id === 'live' && liveCount > 0 && (
-                            <span className="ml-1 w-4 h-4 rounded-full bg-[#22c55e] text-white text-[10px] flex items-center justify-center font-bold flex-shrink-0">
+                            <span className="ml-1 w-4 h-4 rounded-full bg-[#22c55e] text-white text-[10px] flex items-center justify-center font-bold flex-shrink-0 animate-pulse">
                                 {liveCount}
                             </span>
                         )}
@@ -80,22 +80,31 @@ export default function FeedList() {
                 ))}
             </div>
 
-            {/* Empty state — uses Imagen illustration */}
-            {displayEvents.length === 0 ? (
-                <EmptyState
-                    tab={activeTab}
-                    onClearFilter={activeTab !== 'all' ? () => setActiveTab('all') : undefined}
-                />
-            ) : (
-                displayEvents.map((event) => <EventCard key={event.id} event={event} />)
-            )}
+            {/* Event List Container with explicit gaps */}
+            <div className="flex flex-col gap-4 min-h-[400px]">
+                {displayEvents.length === 0 ? (
+                    <EmptyState
+                        tab={activeTab}
+                        onClearFilter={activeTab !== 'all' ? () => setActiveTab('all') : undefined}
+                    />
+                ) : (
+                    displayEvents.map((event) => (
+                        <div key={event.id} className="animate-slide-up">
+                            <EventCard event={event} />
+                        </div>
+                    ))
+                )}
+            </div>
 
             {/* Infinite scroll sentinel — only on "all" tab */}
             {activeTab === 'all' && (
-                <div ref={sentinelRef} className="flex justify-center py-4">
+                <div ref={sentinelRef} className="flex justify-center py-8">
                     {isFetchingNextPage && <Spinner size="sm" />}
                     {!hasNextPage && allEvents.length > 0 && (
-                        <p className="text-xs text-[#8b949e]">You've seen it all ✨</p>
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="h-px w-12 bg-[#30363d]" />
+                            <p className="text-xs font-medium text-[#8b949e] uppercase tracking-widest">End of the Pulse</p>
+                        </div>
                     )}
                 </div>
             )}
