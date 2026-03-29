@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import EventDetailClient from '@/components/events/EventDetailClient';
 import { apiGet } from '@/lib/api-client';
 import type { EventDetail } from '@/lib/types';
@@ -8,7 +9,6 @@ import JsonLd from '@/components/seo/JsonLd';
 interface Props { params: Promise<{ id: string }> }
 
 // Use cache to deduplicate API calls between generateMetadata and the page content
-// Recommended pattern for Next.js 15 server components
 const getEventData = cache(async (id: string) => {
     try {
         return await apiGet<EventDetail>(`/events/${id}`);
@@ -22,12 +22,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
     const event = await getEventData(id);
     
-    // Construct absolute URL for OG image and Canonical tags
-    // This is required for WhatsApp, Twitter, etc. to render 'Cards'
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://citypulse.vercel.app';
+    // Dynamic host detection for Vercel/Preview deployments
+    // This fixed the 'link only' issue on WhatsApp by ensuring absolute URLs match the environment
+    const headerList = await headers();
+    const host = headerList.get('host') || 'citypulse.vercel.app';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const siteUrl = `${protocol}://${host}`;
     const absoluteEventUrl = `${siteUrl}/events/${id}`;
 
     if (!event) return { title: 'Upcoming Event | CityPulse' };
+
+    const ogImageUrl = `${siteUrl}/events/${id}/opengraph-image`;
 
     return {
         title: event.title,
@@ -35,15 +40,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         metadataBase: new URL(siteUrl),
         openGraph: {
             title: event.title,
-            description: event.description ?? `Discover ${event.title} on CityPulse.`,
+            description: event.description ?? `Join us for ${event.title} on CityPulse.`,
             url: absoluteEventUrl,
             siteName: 'CityPulse',
             images: [
                 {
-                    url: `/events/${id}/opengraph-image`, // Next.js automatically handles absolute conversion with metadataBase
+                    url: ogImageUrl,
+                    secureUrl: ogImageUrl,
                     width: 1200,
                     height: 630,
-                    alt: `Join us for ${event.title}`,
+                    type: 'image/png',
+                    alt: `Invitation for ${event.title}`,
                 },
             ],
             type: 'website',
@@ -52,7 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             card: 'summary_large_image',
             title: event.title,
             description: event.description ?? `Join us for ${event.title} on CityPulse.`,
-            images: [`/events/${id}/opengraph-image`],
+            images: [ogImageUrl],
         },
         alternates: {
             canonical: absoluteEventUrl,
