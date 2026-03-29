@@ -148,87 +148,95 @@ export default function InvitationModal({ event, isOpen, onClose }: InvitationMo
                     onMouseEnter={() => setIsHovering(true)}
                     onMouseLeave={handleMouseLeave}
                     style={{ 
-                        transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-                        transition: isHovering ? 'none' : 'all 0.5s ease'
+                        transform: `perspective(1200px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+                        transition: isHovering ? 'none' : 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)'
                     } as React.CSSProperties}
                     className={cn(
-                        "w-full aspect-[4/5] relative overflow-hidden rounded-[3rem] border border-white/10 p-10 flex flex-col items-center justify-between transition-all duration-700 cursor-default",
+                        "w-full min-h-[580px] relative overflow-hidden rounded-[3.5rem] border border-white/20 p-12 flex flex-col items-center justify-between transition-all duration-700 cursor-default",
                         theme.bg,
                         theme.glow,
-                        "transform-gpu translate-z-10"
+                        "transform-gpu translate-z-10 shadow-2xl"
                     )}
                 >
                     {/* Mesh Gradient Overlay - Dynamic Flare */}
                     <div 
-                        className={cn("absolute inset-0 pointer-events-none opacity-80 mix-blend-screen", theme.mesh)} 
+                        className={cn("absolute inset-0 pointer-events-none opacity-90 mix-blend-screen", theme.mesh)} 
                         style={{ 
                             '--x': `${(tilt.y + 10) * 5}%`, 
                             '--y': `${(-tilt.x + 10) * 5}%` 
                         } as React.CSSProperties}
                     />
                     
-                    {/* Gloss Flare Effect */}
+                    {/* Glass Shine Flare Effect */}
                     <div 
-                        className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/10 to-transparent"
-                        style={{
-                            transform: `translateX(${tilt.y * 5}px) translateY(${-tilt.x * 5}px)`,
-                            opacity: isHovering ? 0.3 : 0
-                        } as React.CSSProperties}
+                        className="absolute inset-0 pointer-events-none bg-gradient-to-br from-white/10 via-transparent to-white/5 opacity-50"
                     />
 
                     {/* TOP SECTION: Invitation Tag */}
-                    <div className="relative z-10 flex flex-col items-center gap-4 translate-z-20">
-                        <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl flex items-center gap-2">
-                            <Sparkles className={cn("w-3.5 h-3.5", theme.accent)} />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/70">Invitation</span>
+                    <div className="relative z-10 flex flex-col items-center translate-z-20">
+                        <div className="px-5 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-2xl flex items-center gap-2.5 shadow-lg">
+                            <Sparkles className={cn("w-4 h-4 animate-pulse", theme.accent)} />
+                            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-white">VIP Invitation</span>
                         </div>
                     </div>
 
                     {/* MIDDLE SECTION: Title & Event Type */}
-                    <div className="relative z-10 text-center space-y-4 px-2 translate-z-30">
-                        <h2 className="text-4xl sm:text-5xl font-black tracking-tighter text-white leading-[0.9] drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
+                    <div className="relative z-10 text-center space-y-5 px-2 translate-z-30 w-full">
+                        <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-white leading-[0.95] drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]">
                             {event.title}
                         </h2>
-                        <div className="flex items-center justify-center gap-2">
-                            <span className="text-xl">{theme.icon}</span>
-                            <span className={cn("text-sm font-bold tracking-widest uppercase opacity-90", theme.accent)}>
+                        <div className="flex items-center justify-center gap-3">
+                            <span className="text-2xl filter drop-shadow-md">{theme.icon}</span>
+                            <div className="h-px w-8 bg-white/20" />
+                            <span className={cn("text-xs font-black tracking-[0.25em] uppercase", theme.accent)}>
                                {theme.label}
                             </span>
+                            <div className="h-px w-8 bg-white/20" />
                         </div>
                     </div>
 
                     {/* DETAILS SECTION: Metadata */}
-                    <div className="relative z-10 w-full px-4 space-y-6 translate-z-20">
-                        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+                    <div className="relative z-10 w-full px-2 space-y-6 translate-z-20">
+                        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                         
-                        <div className="flex flex-col gap-5">
-                            <div className="flex items-center justify-between text-left">
-                                <div className="space-y-0.5">
-                                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">When</span>
-                                    <p className="text-base font-bold text-white leading-none">{formattedDate}</p>
-                                    <p className={cn("text-xs font-semibold opacity-70", theme.accent)}>{formattedTime}</p>
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between text-left group/meta">
+                                <div className="space-y-1">
+                                    <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">Live Experience</span>
+                                    <p className="text-lg font-bold text-white leading-tight">{formattedDate}</p>
+                                    <p className={cn("text-sm font-bold opacity-90", theme.accent)}>{formattedTime}</p>
                                 </div>
-                                <div className="h-10 w-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                                    <Calendar className="w-5 h-5 text-white/60" />
+                                <div className="h-12 w-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-inner group-hover/meta:scale-110 transition-transform duration-500">
+                                    <Calendar className="w-6 h-6 text-white" />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+                        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                     </div>
 
-                    {/* BOTTOM SECTION: Branding & CTA */}
-                    <div className="relative z-10 flex flex-col items-center gap-4 translate-z-40">
+                    {/* BOTTOM SECTION: QR Code & Branding */}
+                    <div className="relative z-10 flex flex-col items-center gap-6 translate-z-40 mt-2 mb-2">
                         <div className="group relative">
-                            {/* Real QR Code - Functional */}
-                            <div className="w-20 h-20 bg-white p-1 rounded-2xl rotate-3 group-hover:rotate-0 transition-transform duration-500 shadow-2xl overflow-hidden flex items-center justify-center">
-                                <img src={qrCodeUrl} alt="Event QR Code" className="w-[85%] h-[85%] object-contain" />
-                                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-white/10 pointer-events-none" />
+                            {/* Animated Outer Glow for QR */}
+                            <div className={cn("absolute -inset-4 rounded-[2rem] blur-2xl opacity-20 transition-opacity duration-500 group-hover:opacity-40", theme.bg)} />
+                            
+                            {/* Premium QR Container */}
+                            <div className="w-24 h-24 bg-white p-2 rounded-[1.5rem] rotate-2 group-hover:rotate-0 transition-all duration-500 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-4 border-white/10 overflow-hidden flex items-center justify-center translate-z-50">
+                                <img src={qrCodeUrl} alt="Event QR Code" className="w-full h-full object-contain" />
+                                <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/5 pointer-events-none" />
                             </div>
                         </div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.4em]">Powered By</span>
-                            <span className="text-base font-bold text-gradient tracking-tight">CityPulse</span>
+                        
+                        <div className="flex flex-col items-center gap-1.5">
+                            <div className="flex items-center gap-2">
+                                <div className="h-px w-4 bg-white/20" />
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Official Pass</span>
+                                <div className="h-px w-4 bg-white/20" />
+                            </div>
+                            <span className="text-xl font-black text-white tracking-tighter">
+                                City<span className={theme.accent}>Pulse</span>
+                            </span>
                         </div>
                     </div>
                 </div>
