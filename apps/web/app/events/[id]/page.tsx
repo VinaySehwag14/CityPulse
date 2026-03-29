@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import EventDetailClient from '@/components/events/EventDetailClient';
 import { apiGet } from '@/lib/api-client';
@@ -6,39 +7,62 @@ import JsonLd from '@/components/seo/JsonLd';
 
 interface Props { params: Promise<{ id: string }> }
 
+// Use cache to deduplicate API calls between generateMetadata and the page content
+// Recommended pattern for Next.js 15 server components
+const getEventData = cache(async (id: string) => {
+    try {
+        return await apiGet<EventDetail>(`/events/${id}`);
+    } catch (err) {
+        console.error('Failed to fetch event data:', id, err);
+        return null;
+    }
+});
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
-    try {
-        const event = await apiGet<EventDetail>(`/events/${id}`);
-        return {
+    const event = await getEventData(id);
+    
+    // Construct absolute URL for OG image and Canonical tags
+    // This is required for WhatsApp, Twitter, etc. to render 'Cards'
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://citypulse.vercel.app';
+    const absoluteEventUrl = `${siteUrl}/events/${id}`;
+
+    if (!event) return { title: 'Upcoming Event | CityPulse' };
+
+    return {
+        title: event.title,
+        description: event.description?.slice(0, 160) ?? `Join ${event.title} on CityPulse. Hyperlocal event discovery.`,
+        metadataBase: new URL(siteUrl),
+        openGraph: {
             title: event.title,
-            description: event.description?.slice(0, 160) ?? `Join ${event.title} on CityPulse. Hyperlocal event discovery.`,
-            openGraph: {
-                title: event.title,
-                description: event.description ?? `Discover ${event.title} on CityPulse.`,
-                url: `/events/${id}`,
-            },
-            alternates: {
-                canonical: `/events/${id}`,
-            },
-        };
-    } catch (err) {
-        console.error('Failed to generate metadata for event:', id, err);
-        return { title: 'Upcoming Event | CityPulse' };
-    }
+            description: event.description ?? `Discover ${event.title} on CityPulse.`,
+            url: absoluteEventUrl,
+            siteName: 'CityPulse',
+            images: [
+                {
+                    url: `/events/${id}/opengraph-image`, // Next.js automatically handles absolute conversion with metadataBase
+                    width: 1200,
+                    height: 630,
+                    alt: `Join us for ${event.title}`,
+                },
+            ],
+            type: 'website',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: event.title,
+            description: event.description ?? `Join us for ${event.title} on CityPulse.`,
+            images: [`/events/${id}/opengraph-image`],
+        },
+        alternates: {
+            canonical: absoluteEventUrl,
+        },
+    };
 }
 
 export default async function EventDetailPage({ params }: Props) {
     const { id } = await params;
-    
-    // Attempt to fetch event data for server-side JSON-LD injection
-    let event: EventDetail | null = null;
-    try {
-        event = await apiGet<EventDetail>(`/events/${id}`);
-    } catch (err) {
-        // We'll let the client handle the error state if it doesn't exist
-        console.error('Failed to fetch event for JSON-LD:', id, err);
-    }
+    const event = await getEventData(id);
 
     const eventJsonLd = event ? {
         '@context': 'https://schema.org',
