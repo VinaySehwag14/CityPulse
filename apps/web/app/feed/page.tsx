@@ -4,8 +4,18 @@ import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-    title: 'Feed',
-    description: 'Discover live and upcoming events happening around you right now.',
+    title: 'Live Event Feed – What\'s Happening Now',
+    description:
+        'Browse live and upcoming events near you, ranked by freshness and social buzz. Bhandaras, meetups, garba nights & more – all in real time.',
+    openGraph: {
+        title: 'Live Event Feed – What\'s Happening Now | CityPulse',
+        description:
+            'Browse live and upcoming events near you, ranked by freshness and social buzz.',
+        url: '/feed',
+    },
+    alternates: {
+        canonical: '/feed',
+    },
 };
 
 export default function FeedPage() {
