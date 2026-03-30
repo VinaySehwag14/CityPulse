@@ -131,33 +131,34 @@ export default function InvitationModal({ event, isOpen, onClose }: InvitationMo
     });
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] overflow-y-auto">
             {/* Ultra-dark backdrop with heavy blur */}
             <div 
-                className="absolute inset-0 bg-[#000]/90 backdrop-blur-md animate-fade-in" 
+                className="fixed inset-0 bg-[#000]/90 backdrop-blur-md animate-fade-in" 
                 onClick={onClose} 
             />
 
-            {/* Modal Content */}
-            <div className="relative w-full max-w-sm flex flex-col items-center gap-8 animate-slide-up perspective-2000">
-                
-                {/* 3D Invitation Card */}
-                <div 
-                    ref={cardRef}
-                    onMouseMove={handleMouseMove}
-                    onMouseEnter={() => setIsHovering(true)}
-                    onMouseLeave={handleMouseLeave}
-                    style={{ 
-                        transform: `perspective(1200px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-                        transition: isHovering ? 'none' : 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)'
-                    } as React.CSSProperties}
-                    className={cn(
-                        "w-full min-h-[580px] relative overflow-hidden rounded-[3.5rem] border border-white/20 p-12 flex flex-col items-center justify-between transition-all duration-700 cursor-default",
-                        theme.bg,
-                        theme.glow,
-                        "transform-gpu translate-z-10 shadow-2xl"
-                    )}
-                >
+            {/* Modal Content - Center on desktop, scroll on mobile */}
+            <div className="relative min-h-full w-full flex items-start sm:items-center justify-center p-4 py-16 sm:py-4 perspective-2000">
+                <div className="relative w-full max-w-sm flex flex-col items-center gap-6 sm:gap-8 animate-slide-up flex-1">
+                    
+                    {/* 3D Invitation Card */}
+                    <div 
+                        ref={cardRef}
+                        onMouseMove={handleMouseMove}
+                        onMouseEnter={() => setIsHovering(true)}
+                        onMouseLeave={handleMouseLeave}
+                        style={{ 
+                            transform: `perspective(1200px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+                            transition: isHovering ? 'none' : 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)'
+                        } as React.CSSProperties}
+                        className={cn(
+                            "w-full min-h-[540px] sm:min-h-[580px] relative overflow-hidden rounded-[3.5rem] border border-white/20 p-8 sm:p-12 flex flex-col items-center justify-between transition-all duration-700 cursor-default",
+                            theme.bg,
+                            theme.glow,
+                            "transform-gpu translate-z-10 shadow-2xl"
+                        )}
+                    >
                     {/* Mesh Gradient Overlay - Dynamic Flare */}
                     <div 
                         className={cn("absolute inset-0 pointer-events-none opacity-90 mix-blend-screen", theme.mesh)} 
@@ -279,5 +280,6 @@ export default function InvitationModal({ event, isOpen, onClose }: InvitationMo
                 </div>
             </div>
         </div>
-    );
+    </div>
+);
 }
