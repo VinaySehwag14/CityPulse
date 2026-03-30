@@ -34,66 +34,71 @@ export default function Navbar() {
     const pathname = usePathname();
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-[#30363d]">
-            <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-                {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 font-bold text-lg group">
-                    <CityPulseLogo size={28} />
-                    <span className="text-gradient tracking-tight font-display font-bold">CityPulse</span>
-                </Link>
+        <>
+            <header className="fixed top-0 left-0 right-0 z-[60] glass border-b border-[#30363d] h-16">
+                <div className="max-w-6xl mx-auto px-4 h-full flex items-center justify-between">
+                    {/* Logo */}
+                    <Link href="/" className="flex items-center gap-2 font-bold text-lg group">
+                        <CityPulseLogo size={28} />
+                        <span className="text-gradient tracking-tight font-display font-bold">CityPulse</span>
+                    </Link>
 
-                {/* Nav links */}
-                <nav className="hidden md:flex items-center gap-1">
-                    {NAV_LINKS.map(({ href, label, icon: Icon }) => (
-                        <Link
-                            key={href}
-                            href={href}
-                            className={clsx(
-                                'flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200',
-                                pathname === href
-                                    ? 'bg-[#0caee8]/10 text-[#0caee8]'
-                                    : 'text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#1c2128]'
-                            )}
-                        >
-                            <Icon className="w-4 h-4" />
-                            {label}
-                        </Link>
-                    ))}
-                </nav>
+                    {/* Nav links */}
+                    <nav className="hidden md:flex items-center gap-1">
+                        {NAV_LINKS.map(({ href, label, icon: Icon }) => (
+                            <Link
+                                key={href}
+                                href={href}
+                                className={clsx(
+                                    'flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200',
+                                    pathname === href
+                                        ? 'bg-[#0caee8]/10 text-[#0caee8]'
+                                        : 'text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#1c2128]'
+                                )}
+                            >
+                                <Icon className="w-4 h-4" />
+                                {label}
+                            </Link>
+                        ))}
+                    </nav>
 
-                {/* Auth */}
-                <div className="flex items-center gap-3">
-                    <SignedOut>
-                        <SignInButton mode="modal">
-                            <button className="px-4 py-2 text-sm font-medium rounded-xl bg-[#0caee8] text-white hover:bg-[#0090c6] transition-colors">
-                                Sign In
-                            </button>
-                        </SignInButton>
-                    </SignedOut>
-                    <SignedIn>
-                        <UserButton afterSignOutUrl="/" />
-                    </SignedIn>
+                    {/* Auth */}
+                    <div className="flex items-center gap-3">
+                        <SignedOut>
+                            <SignInButton mode="modal">
+                                <button className="px-4 py-2 text-sm font-medium rounded-xl bg-[#0caee8] text-white hover:bg-[#0090c6] transition-colors">
+                                    Sign In
+                                </button>
+                            </SignInButton>
+                        </SignedOut>
+                        <SignedIn>
+                            <UserButton afterSignOutUrl="/" />
+                        </SignedIn>
+                    </div>
                 </div>
-            </div>
+            </header>
 
             {/* Mobile bottom nav */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-[#30363d]">
-                <div className="flex items-center justify-around py-2">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-[60] glass border-t border-[#30363d] safe-area-pb">
+                <div className="flex items-center justify-around py-2 px-2">
                     {NAV_LINKS.map(({ href, label, icon: Icon }) => (
                         <Link
                             key={href}
                             href={href}
                             className={clsx(
-                                'flex flex-col items-center gap-1 px-4 py-2 rounded-xl text-xs font-medium transition-all',
+                                'flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl text-[10px] font-medium transition-all flex-1',
                                 pathname === href ? 'text-[#0caee8]' : 'text-[#8b949e]'
                             )}
                         >
-                            <Icon className="w-5 h-5" />
+                            <Icon className={clsx(
+                                'w-5 h-5 mb-0.5 transition-transform duration-200',
+                                pathname === href && 'scale-110'
+                            )} />
                             {label}
                         </Link>
                     ))}
                 </div>
             </div>
-        </header>
+        </>
     );
 }
