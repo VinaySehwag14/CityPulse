@@ -11,9 +11,9 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
     // Run middleware on all routes except _next internals and static files
-    // Also explicitly exclude opengraph-image and twitter-image routes
+    // Explicitly excluding opengraph-image and twitter-image ensures zero middleware interference for crawlers
     matcher: [
-        '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)|.*opengraph-image|.*twitter-image).*)', 
+        '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)|.*opengraph-image.*|.*twitter-image.*).*)', 
         '/(api|trpc)(.*)'
     ],
 };

@@ -38,8 +38,8 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0d1117', // Solid background for faster rendering and zero artifacting
-        padding: '40px',
+        background: '#0caee8', // Use vibrant blue to be 100% sure we can see the image
+        padding: '60px',
         position: 'relative',
         overflow: 'hidden',
     };
@@ -99,7 +99,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                         backgroundColor: '#0caee8',
                         borderRadius: 8
                     }} />
-                    <span style={{ fontSize: 32, fontWeight: 900, color: 'white', letterSpacing: '-1px' }}>CityPulse</span>
+                    <span style={{ fontSize: 40, fontWeight: 900, color: 'white', letterSpacing: '-2px' }}>CityPulse</span>
                 </div>
 
                 {/* "EXCLUSIVE INVITATION" Tag */}
