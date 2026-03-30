@@ -45,6 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             images: [
                 {
                     url: ogImageUrl,
+                    secureUrl: ogImageUrl, // Explicitly defined for WhatsApp/FB
                     width: 1200,
                     height: 630,
                     alt: `VIP Invitation for ${event.title}`,

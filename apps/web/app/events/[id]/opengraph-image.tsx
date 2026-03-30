@@ -38,7 +38,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #050a12 0%, #0d1117 100%)',
+        background: '#0d1117', // Solid background for faster rendering and zero artifacting
         padding: '40px',
         position: 'relative',
         overflow: 'hidden',
@@ -158,7 +158,6 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             ...size,
             headers: {
                 'Cache-Control': 'public, immutable, no-transform, max-age=3600, stale-while-revalidate=86400',
-                'Content-Type': 'image/png',
             },
         }
     );
