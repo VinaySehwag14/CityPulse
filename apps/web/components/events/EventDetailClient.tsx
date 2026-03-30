@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useClerk } from '@clerk/nextjs';
 import { Heart, Users, Calendar, MessageCircle, Pencil, Trash2, Share2, Copy, CheckCircle2, Sparkles as SparklesIcon } from 'lucide-react';
+import { clsx } from 'clsx';
 
 import { useEvent, useDeleteEvent } from '@/hooks/useEvents';
 import { useLike, useAttend, useAddComment } from '@/hooks/useInteractions';
@@ -41,12 +42,19 @@ function formatEventTime(startIso: string, endIso: string) {
 export default function EventDetailClient({ eventId }: { eventId: string }) {
     const router = useRouter();
     const { user: clerkUser, isSignedIn } = useUser();
-
-    const { data: event, isLoading, isError } = useEvent(eventId);
+    const { openSignIn } = useClerk();
+    
+    // Hooks
+    const { data: event, isLoading, isError, refetch } = useEvent(eventId);
     const like = useLike(eventId);
     const attend = useAttend(eventId);
     const addComment = useAddComment(eventId);
     const deleteEvent = useDeleteEvent();
+    
+    // UI Local State for Optimism
+    const [optimisticLikeCount, setOptimisticLikeCount] = useState<number | null>(null);
+    const [isOptimisticAttending, setIsOptimisticAttending] = useState<boolean | null>(null);
+    const [interactionError, setInteractionError] = useState<string | null>(null);
 
     const [comment, setComment] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(false);
@@ -68,6 +76,44 @@ export default function EventDetailClient({ eventId }: { eventId: string }) {
     const handleDelete = async () => {
         await deleteEvent.mutateAsync(eventId);
         router.push('/feed');
+    };
+
+    const handleLike = async () => {
+        if (!isSignedIn) {
+            openSignIn();
+            return;
+        }
+        
+        try {
+            setInteractionError(null);
+            // Optimistic update: toggle like (currently simple +1/-1 logic assuming users can only toggle)
+            const currentLikeCount = optimisticLikeCount ?? event?.like_count ?? 0;
+            setOptimisticLikeCount(currentLikeCount + 1); // Simple logic: always add for now as toggle is handled by API
+            
+            await like.mutateAsync();
+            // On success, we let the refetch (via onSuccess in hook) handle it
+            setOptimisticLikeCount(null); 
+        } catch (err) {
+            setOptimisticLikeCount(null);
+            setInteractionError('Failed to update like. Please try again.');
+        }
+    };
+
+    const handleAttend = async () => {
+        if (!isSignedIn) {
+            openSignIn();
+            return;
+        }
+
+        try {
+            setInteractionError(null);
+            setIsOptimisticAttending(true);
+            await attend.mutateAsync('going');
+            setIsOptimisticAttending(null);
+        } catch (err) {
+            setIsOptimisticAttending(null);
+            setInteractionError('Could not update attendance. Please try again.');
+        }
     };
 
     return (
@@ -205,29 +251,44 @@ export default function EventDetailClient({ eventId }: { eventId: string }) {
                 <MiniMap lat={event.location_lat} lng={event.location_lng} />
             </div>
 
-            {/* Social Actions */}
-            {isSignedIn && (
-                <div className="flex gap-3 pt-2">
+            {/* Social Actions — Simplified buttons with optimistic feedback */}
+            <div className="space-y-3 pt-2">
+                <div className="flex gap-3">
                     <Button
                         variant="secondary"
-                        onClick={() => like.mutate()}
-                        loading={like.isPending}
-                        className={`flex-1 ${event.like_count > 0 ? 'border-red-500/30 bg-red-500/5' : ''}`}
+                        onClick={handleLike}
+                        className={clsx(
+                            'flex-1 transition-all',
+                            (optimisticLikeCount ?? event.like_count) > 0 && 'border-red-500/30 bg-red-500/5'
+                        )}
                     >
-                        <Heart className={`w-4 h-4 ${event.like_count > 0 ? 'text-red-500 fill-red-500' : 'text-[#8b949e]'}`} />
-                        {event.like_count} Like{event.like_count !== 1 ? 's' : ''}
+                        <Heart className={clsx(
+                            'w-4 h-4 transition-transform active:scale-125',
+                            (optimisticLikeCount ?? event.like_count) > 0 ? 'text-red-500 fill-red-500' : 'text-[#8b949e]'
+                        )} />
+                        {optimisticLikeCount ?? event.like_count} Like{(optimisticLikeCount ?? event.like_count) !== 1 ? 's' : ''}
                     </Button>
                     <Button
-                        variant="primary"
-                        onClick={() => attend.mutate('going')}
-                        loading={attend.isPending}
+                        variant={isOptimisticAttending || event.attendees.some(a => a.user_id === clerkUser?.id) ? 'secondary' : 'primary'}
+                        onClick={handleAttend}
                         className="flex-1"
                     >
-                        <Users className="w-4 h-4" />
-                        Attending
+                        {isOptimisticAttending || event.attendees.some(a => a.user_id === clerkUser?.id) ? (
+                            <CheckCircle2 className="w-4 h-4 text-[#22c55e]" />
+                        ) : (
+                            <Users className="w-4 h-4" />
+                        )}
+                        {isOptimisticAttending || event.attendees.some(a => a.user_id === clerkUser?.id) ? 'Attending' : 'Attend'}
                     </Button>
                 </div>
-            )}
+                
+                {interactionError && (
+                    <div className="text-xs text-red-500 font-medium px-1 flex items-center gap-1.5 animate-shake">
+                        <Trash2 className="w-3 h-3" />
+                        {interactionError}
+                    </div>
+                )}
+            </div>
 
             {/* Attendees Facepile */}
             {event.attendees.length > 0 && (
