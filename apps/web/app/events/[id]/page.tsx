@@ -22,8 +22,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
     const event = await getEventData(id);
     
-    // Use hardcoded production URL for absolute metadata consistency across crawlers
-    const siteUrl = 'https://city-pulse-eosin.vercel.app';
+    // Explicit dynamic host detection to support both preview and production deployments
+    const headerList = await headers();
+    const host = headerList.get('host') || 'city-pulse-eosin.vercel.app';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const siteUrl = `${protocol}://${host}`;
     const absoluteEventUrl = `${siteUrl}/events/${id}`;
 
     if (!event) return { title: 'Upcoming Event | CityPulse' };
