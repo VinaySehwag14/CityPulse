@@ -6,6 +6,11 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+    // Explicitly skip Clerk logic for OG images to ensure crawlers have unobstructed access
+    if (req.nextUrl.pathname.endsWith('/opengraph-image')) {
+        return;
+    }
+
     if (isProtectedRoute(req)) await auth.protect();
 });
 

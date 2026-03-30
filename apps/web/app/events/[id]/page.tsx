@@ -31,6 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!event) return { title: 'Upcoming Event | CityPulse' };
 
+    const ogImageUrl = `${siteUrl}/events/${id}/opengraph-image`;
+
     return {
         title: event.title,
         description: event.description?.slice(0, 160) ?? `Join ${event.title} on CityPulse. Hyperlocal event discovery.`,
@@ -40,6 +42,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             description: event.description ?? `Join us for ${event.title} on CityPulse.`,
             url: absoluteEventUrl,
             siteName: 'CityPulse',
+            images: [
+                {
+                    url: ogImageUrl,
+                    width: 1200,
+                    height: 630,
+                    alt: `VIP Invitation for ${event.title}`,
+                    type: 'image/png',
+                },
+            ],
             locale: 'en_IN',
             type: 'website',
         },
@@ -47,6 +58,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             card: 'summary_large_image',
             title: event.title,
             description: event.description ?? `Join us for ${event.title} on CityPulse.`,
+            images: [ogImageUrl],
         },
         alternates: {
             canonical: absoluteEventUrl,
