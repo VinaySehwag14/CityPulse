@@ -62,11 +62,12 @@ export default async function Image({ params }: { params: Promise<{ id: string }
     }
 
     const startDate = new Date(event.start_time);
-    const dateStr = startDate.toLocaleDateString('en-IN', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-    });
+    
+    // Safer date formatting for Edge runtime (some locales might not be present)
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    const dateStr = `${days[startDate.getDay()]}, ${startDate.getDate()} ${months[startDate.getMonth()]}`;
 
     return new ImageResponse(
         (
@@ -98,7 +99,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                         backgroundColor: '#0caee8',
                         borderRadius: 8
                     }} />
-                    <span style={{ fontSize: 32, fontWeight: 'black', color: 'white', letterSpacing: '-1px' }}>CityPulse</span>
+                    <span style={{ fontSize: 32, fontWeight: 900, color: 'white', letterSpacing: '-1px' }}>CityPulse</span>
                 </div>
 
                 {/* "EXCLUSIVE INVITATION" Tag */}
@@ -157,6 +158,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             ...size,
             headers: {
                 'Cache-Control': 'public, immutable, no-transform, max-age=3600, stale-while-revalidate=86400',
+                'Content-Type': 'image/png',
             },
         }
     );
