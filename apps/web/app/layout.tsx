@@ -117,7 +117,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {/* End Google Tag Manager (noscript) */}
                 <Providers>
                     <Navbar />
-                    <main className="pt-16">
+                    <main className="pt-16 pb-20 md:pb-0">
                         {children}
                     </main>
                 </Providers>
