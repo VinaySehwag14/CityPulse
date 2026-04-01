@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -45,75 +45,63 @@ export default function EventDetailClient({ eventId }: { eventId: string }) {
     const { openSignIn } = useClerk();
     
     // Hooks
-    const { data: event, isLoading, isError, refetch } = useEvent(eventId);
+    const { data: event, isLoading, isError } = useEvent(eventId);
     const like = useLike(eventId);
     const attend = useAttend(eventId);
     const addComment = useAddComment(eventId);
     const deleteEvent = useDeleteEvent();
     
-    // UI Local State for Optimism
-    const [optimisticLikeCount, setOptimisticLikeCount] = useState<number | null>(null);
-    const [isOptimisticAttending, setIsOptimisticAttending] = useState<boolean | null>(null);
-    const [interactionError, setInteractionError] = useState<string | null>(null);
-
     const [comment, setComment] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
+    const [interactionError, setInteractionError] = useState<string | null>(null);
 
     if (isLoading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>;
     if (isError || !event) return <p className="text-center text-[#8b949e] py-20">Event not found.</p>;
 
     const isLive = new Date(event.start_time) <= new Date() && new Date(event.end_time) > new Date();
-    const isOwner = !!clerkUser && clerkUser.id === event.created_by; // Note: currently assuming uuid match, actually this requires DB resolve on backend.
+    const isOwner = !!clerkUser && clerkUser.id === event.created_by;
+    const isAttending = event.attendees.some(a => a.user_id === clerkUser?.id);
 
     const handleComment = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!comment.trim()) return;
-        await addComment.mutateAsync(comment.trim());
-        setComment('');
+        if (!comment.trim() || addComment.isPending) return;
+        try {
+            await addComment.mutateAsync(comment.trim());
+            setComment('');
+        } catch (err) {
+            console.error('Comment failed', err);
+        }
     };
 
     const handleDelete = async () => {
-        await deleteEvent.mutateAsync(eventId);
-        router.push('/feed');
+        if (deleteEvent.isPending) return;
+        try {
+            await deleteEvent.mutateAsync(eventId);
+            router.push('/feed');
+        } catch (err) {
+            console.error('Delete failed', err);
+        }
     };
 
-    const handleLike = async () => {
+    const handleLike = () => {
         if (!isSignedIn) {
             openSignIn();
             return;
         }
-        
-        try {
-            setInteractionError(null);
-            // Optimistic update: toggle like (currently simple +1/-1 logic assuming users can only toggle)
-            const currentLikeCount = optimisticLikeCount ?? event?.like_count ?? 0;
-            setOptimisticLikeCount(currentLikeCount + 1); // Simple logic: always add for now as toggle is handled by API
-            
-            await like.mutateAsync();
-            // On success, we let the refetch (via onSuccess in hook) handle it
-            setOptimisticLikeCount(null); 
-        } catch (err) {
-            setOptimisticLikeCount(null);
-            setInteractionError('Failed to update like. Please try again.');
-        }
+        if (like.isPending) return;
+        setInteractionError(null);
+        like.mutate();
     };
 
-    const handleAttend = async () => {
+    const handleAttend = () => {
         if (!isSignedIn) {
             openSignIn();
             return;
         }
-
-        try {
-            setInteractionError(null);
-            setIsOptimisticAttending(true);
-            await attend.mutateAsync('going');
-            setIsOptimisticAttending(null);
-        } catch (err) {
-            setIsOptimisticAttending(null);
-            setInteractionError('Could not update attendance. Please try again.');
-        }
+        if (attend.isPending || isAttending) return;
+        setInteractionError(null);
+        attend.mutate('going');
     };
 
     return (
@@ -165,7 +153,7 @@ export default function EventDetailClient({ eventId }: { eventId: string }) {
                             <div className="flex items-center gap-2 bg-red-500/10 px-3 py-1 rounded-lg border border-red-500/20">
                                 <span className="text-xs font-medium text-red-400">Delete event?</span>
                                 <Button variant="danger" size="sm" loading={deleteEvent.isPending} onClick={handleDelete} className="h-7 px-3">
-                                    Yes
+                                    {deleteEvent.isPending ? 'Deleting...' : 'Yes'}
                                 </Button>
                                 <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)} className="h-7 px-3 text-[#8b949e]">
                                     Cancel
@@ -257,28 +245,30 @@ export default function EventDetailClient({ eventId }: { eventId: string }) {
                     <Button
                         variant="secondary"
                         onClick={handleLike}
+                        loading={like.isPending}
                         className={clsx(
-                            'flex-1 transition-all',
-                            (optimisticLikeCount ?? event.like_count) > 0 && 'border-red-500/30 bg-red-500/5'
+                            'flex-1 transition-all active:scale-[0.98]',
+                            event.like_count > 0 && 'border-red-500/30 bg-red-500/5'
                         )}
                     >
                         <Heart className={clsx(
-                            'w-4 h-4 transition-transform active:scale-125',
-                            (optimisticLikeCount ?? event.like_count) > 0 ? 'text-red-500 fill-red-500' : 'text-[#8b949e]'
+                            'w-4 h-4 transition-transform group-hover:scale-110',
+                            event.like_count > 0 ? 'text-red-500 fill-red-500' : 'text-[#8b949e]'
                         )} />
-                        {optimisticLikeCount ?? event.like_count} Like{(optimisticLikeCount ?? event.like_count) !== 1 ? 's' : ''}
+                        {event.like_count} Like{event.like_count !== 1 ? 's' : ''}
                     </Button>
                     <Button
-                        variant={isOptimisticAttending || event.attendees.some(a => a.user_id === clerkUser?.id) ? 'secondary' : 'primary'}
+                        variant={isAttending ? 'secondary' : 'primary'}
                         onClick={handleAttend}
-                        className="flex-1"
+                        loading={attend.isPending}
+                        className="flex-1 transition-all active:scale-[0.98]"
                     >
-                        {isOptimisticAttending || event.attendees.some(a => a.user_id === clerkUser?.id) ? (
+                        {isAttending ? (
                             <CheckCircle2 className="w-4 h-4 text-[#22c55e]" />
                         ) : (
                             <Users className="w-4 h-4" />
                         )}
-                        {isOptimisticAttending || event.attendees.some(a => a.user_id === clerkUser?.id) ? 'Attending' : 'Attend'}
+                        {attend.isPending ? 'Joining...' : (isAttending ? 'Attending' : 'Attend')}
                     </Button>
                 </div>
                 
@@ -364,4 +354,3 @@ export default function EventDetailClient({ eventId }: { eventId: string }) {
         </div>
     );
 }
-

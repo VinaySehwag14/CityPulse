@@ -24,5 +24,6 @@ export function useFeed() {
             const totalPages = Math.ceil(lastPage.total / LIMIT);
             return lastPage.page < totalPages ? lastPage.page + 1 : undefined;
         },
+        staleTime: 1000 * 60 * 5, // 5 minutes
     });
 }

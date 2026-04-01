@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useEvent, useUpdateEvent } from '@/hooks/useEvents';
@@ -24,30 +24,37 @@ export function EditEventForm({ eventId }: { eventId: string }) {
     const [form, setForm] = useState({ title: '', description: '', start_time: '', end_time: '' });
     const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [initialized, setInitialized] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
     // Pre-fill once event loads
-    if (event && !initialized) {
-        setForm({
-            title: event.title,
-            description: event.description ?? '',
-            start_time: new Date(event.start_time).toISOString().slice(0, 16),
-            end_time: new Date(event.end_time).toISOString().slice(0, 16),
-        });
-        setLocation({ lat: event.location_lat, lng: event.location_lng });
-        setInitialized(true);
-    }
+    useEffect(() => {
+        if (event && !initialized) {
+            setForm({
+                title: event.title,
+                description: event.description ?? '',
+                start_time: new Date(event.start_time).toISOString().slice(0, 16),
+                end_time: new Date(event.end_time).toISOString().slice(0, 16),
+            });
+            setLocation({ lat: event.location_lat, lng: event.location_lng });
+            setInitialized(true);
+        }
+    }, [event, initialized]);
 
     const set = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmitting || updateEvent.isPending) return;
+
         setError('');
 
         if (!form.title.trim()) return setError('Title is required');
         if (!location) return setError('Please select a location on the map');
         if (!form.start_time || !form.end_time) return setError('Start and end times are required');
         if (new Date(form.end_time) <= new Date(form.start_time)) return setError('End time must be after start time');
+
+        setIsSubmitting(true);
 
         try {
             await updateEvent.mutateAsync({
@@ -61,6 +68,7 @@ export function EditEventForm({ eventId }: { eventId: string }) {
             router.push(`/events/${eventId}`);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to update event');
+            setIsSubmitting(false);
         }
     };
 
@@ -115,8 +123,17 @@ export function EditEventForm({ eventId }: { eventId: string }) {
                 )}
 
                 <div className="flex gap-3">
-                    <Button type="button" variant="ghost" size="lg" onClick={() => router.back()} className="flex-1">Cancel</Button>
-                    <Button type="submit" size="lg" loading={updateEvent.isPending} className="flex-1">Save Changes</Button>
+                    <Button type="button" variant="secondary" size="lg" onClick={() => router.back()} className="flex-1">
+                        Cancel
+                    </Button>
+                    <Button 
+                        type="submit" 
+                        size="lg" 
+                        loading={isSubmitting || updateEvent.isPending} 
+                        className="flex-1 shadow-lg shadow-[#0caee8]/10"
+                    >
+                        {isSubmitting ? 'Saving...' : 'Save Changes'}
+                    </Button>
                 </div>
             </form>
         </div>
