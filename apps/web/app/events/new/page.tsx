@@ -30,18 +30,23 @@ export default function CreateEventPage() {
         end_time: '',
     });
     const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
     const set = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmitting || createEvent.isPending) return;
+        
         setError('');
 
         if (!form.title.trim()) return setError('Title is required');
         if (!location) return setError('Please select a location on the map');
         if (!form.start_time || !form.end_time) return setError('Start and end times are required');
         if (new Date(form.end_time) <= new Date(form.start_time)) return setError('End time must be after start time');
+
+        setIsSubmitting(true);
 
         try {
             const event = await createEvent.mutateAsync({
@@ -55,6 +60,7 @@ export default function CreateEventPage() {
             router.push(`/events/${event.id}`);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create event');
+            setIsSubmitting(false);
         }
     };
 
@@ -131,8 +137,13 @@ export default function CreateEventPage() {
                         </p>
                     )}
 
-                    <Button type="submit" size="lg" loading={createEvent.isPending} className="w-full mt-2">
-                        Publish Event
+                    <Button 
+                        type="submit" 
+                        size="lg" 
+                        loading={isSubmitting || createEvent.isPending} 
+                        className="w-full mt-2 transition-all active:scale-[0.98]"
+                    >
+                        {isSubmitting ? 'Publishing...' : 'Publish Event'}
                     </Button>
                 </form>
             </SignedIn>

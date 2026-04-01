@@ -16,7 +16,25 @@ export function useLike(eventId: string) {
             const token = await getToken();
             return apiPost<ToggleLikeResult>(`/events/${eventId}/like`, {}, token!);
         },
-        onSuccess: () => {
+        onMutate: async () => {
+            await qc.cancelQueries({ queryKey: ['event', eventId] });
+            const previousEvent = qc.getQueryData<any>(['event', eventId]);
+            if (previousEvent) {
+                // Optimistically toggle
+                const isLiked = previousEvent.like_count > 0;
+                qc.setQueryData(['event', eventId], {
+                    ...previousEvent,
+                    like_count: isLiked ? 0 : 1, // Simplified since toggle
+                });
+            }
+            return { previousEvent };
+        },
+        onError: (err, variables, context: any) => {
+            if (context?.previousEvent) {
+                qc.setQueryData(['event', eventId], context.previousEvent);
+            }
+        },
+        onSettled: () => {
             qc.invalidateQueries({ queryKey: ['event', eventId] });
             qc.invalidateQueries({ queryKey: ['feed'] });
         },
@@ -32,7 +50,23 @@ export function useAttend(eventId: string) {
             const token = await getToken();
             return apiPost<AttendResult>(`/events/${eventId}/attend`, { status }, token!);
         },
-        onSuccess: () => {
+        onMutate: async (status) => {
+            await qc.cancelQueries({ queryKey: ['event', eventId] });
+            const previousEvent = qc.getQueryData<any>(['event', eventId]);
+            if (previousEvent) {
+                qc.setQueryData(['event', eventId], {
+                    ...previousEvent,
+                    attendee_count: previousEvent.attendee_count + 1,
+                });
+            }
+            return { previousEvent };
+        },
+        onError: (err, variables, context: any) => {
+            if (context?.previousEvent) {
+                qc.setQueryData(['event', eventId], context.previousEvent);
+            }
+        },
+        onSettled: () => {
             qc.invalidateQueries({ queryKey: ['event', eventId] });
         },
     });
